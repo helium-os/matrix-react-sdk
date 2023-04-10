@@ -23,7 +23,8 @@ $activeBackgroundColor: $panel-actions;
 $activeBorderColor: $primary-content;
 
 .mx_SpacePanel {
-    background-color: $spacePanel-bg-color;
+    background-color: $background-left;
+    width:150px;
     flex: 0 0 auto;
     padding: 0;
     margin: 0;
@@ -144,6 +145,7 @@ $activeBorderColor: $primary-content;
             display: flex;
             flex: 1;
             align-items: center;
+            justify-contain:center;
             border-radius: 12px;
             padding: 4px;
             width: calc(100% - 32px);
@@ -374,7 +376,9 @@ $activeBorderColor: $primary-content;
         margin: 12px 14px 4px 18px;
     }
 }
-
+.mx_LeftPanel_wrapper  .collapsed{
+width:60px;
+}
 .mx_SpacePanel_contextMenu {
     max-width: 360px;
 

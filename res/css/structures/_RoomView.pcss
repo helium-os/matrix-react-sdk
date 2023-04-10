@@ -119,6 +119,7 @@ limitations under the License.
     display: flex;
     flex-direction: column;
     margin-right: calc($container-gap-width / 2);
+    background-color: $background-content;
 }
 
 .mx_RoomView_statusArea {
@@ -261,6 +262,11 @@ hr.mx_RoomView_myReadMarker {
     width: 100%;
     flex: 0 0 auto;
     margin-right: 2px;
+    height: 200px;
+    border-radius: 0px 0px 0px 0px;
+    opacity: 1;
+    border: 1px solid rgba(0,0,0,0.05);
+    background:$background-content;
 }
 
 .mx_RoomView_ongoingConfCallNotification {
