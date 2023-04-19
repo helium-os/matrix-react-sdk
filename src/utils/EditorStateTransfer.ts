@@ -51,3 +51,11 @@ export default class EditorStateTransfer {
         return this.event;
     }
 }
+
+export class TranslateStateTransfer {
+    public constructor(private readonly event: MatrixEvent) {}
+
+    public getEvent(): MatrixEvent {
+        return this.event;
+    }
+}

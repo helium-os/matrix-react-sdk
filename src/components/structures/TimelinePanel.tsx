@@ -134,6 +134,7 @@ interface IProps {
 
     resizeNotifier?: ResizeNotifier;
     editState?: EditorStateTransfer;
+    translateState?: EditorStateTransfer;
     permalinkCreator?: RoomPermalinkCreator;
     membersLoaded?: boolean;
 
@@ -215,6 +216,7 @@ interface IState {
     readMarkerOutOfViewThresholdMs: number;
 
     editState?: EditorStateTransfer;
+    translateState?: EditorStateTransfer;
 }
 
 interface IEventIndexOpts {
@@ -1958,6 +1960,7 @@ class TimelinePanel extends React.Component<IProps, IState> {
                 resizeNotifier={this.props.resizeNotifier}
                 getRelationsForEvent={this.getRelationsForEvent}
                 editState={this.props.editState}
+                translateState={this.props.translateState}
                 showReactions={this.props.showReactions}
                 layout={this.props.layout}
                 hideThreadedMessages={this.props.hideThreadedMessages}

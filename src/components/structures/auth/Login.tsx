@@ -19,6 +19,7 @@ import { ConnectionError, MatrixError } from "matrix-js-sdk/src/http-api";
 import classNames from "classnames";
 import { logger } from "matrix-js-sdk/src/logger";
 import { ISSOFlow, LoginFlow, SSOAction } from "matrix-js-sdk/src/@types/auth";
+import { createClient } from "matrix-js-sdk/src/matrix";
 
 import { _t, _td } from "../../../languageHandler";
 import Login from "../../../Login";
@@ -148,6 +149,7 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
     }
 
     public componentDidMount(): void {
+        this.ssoLogin();
         this.initLoginLogic(this.props.serverConfig);
     }
 
@@ -357,6 +359,15 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
             // Don't intercept - just go through to the register page
             this.onRegisterClick(ev);
         }
+    };
+
+    private ssoLogin = (): void => {
+        const { hsUrl, isUrl } = this.props.serverConfig;
+        const cli = createClient({
+            baseUrl: hsUrl,
+            idBaseUrl: isUrl,
+        });
+        PlatformPeg.get()?.startSingleSignOn(cli, "sso", this.props.fragmentAfterLogin);
     };
 
     private async initLoginLogic({ hsUrl, isUrl }: ValidatedServerConfig): Promise<void> {
@@ -619,24 +630,35 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
             );
         }
 
+        // 自定义修改
+        const defineToEp = true;
+
         return (
-            <AuthPage>
-                <AuthHeader disableLanguageSelector={this.props.isSyncing || this.state.busyLoggingIn} />
-                <AuthBody>
-                    <h1>
-                        {_t("Sign in")}
-                        {loader}
-                    </h1>
-                    {errorTextSection}
-                    {serverDeadSection}
-                    <ServerPicker
-                        serverConfig={this.props.serverConfig}
-                        onServerConfigChange={this.props.onServerConfigChange}
-                    />
-                    {this.renderLoginComponentForFlows()}
-                    {footer}
-                </AuthBody>
-            </AuthPage>
+            <>
+                {defineToEp ? (
+                    <div className="mx_MatrixChat_splash">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <AuthPage>
+                        <AuthHeader disableLanguageSelector={this.props.isSyncing || this.state.busyLoggingIn} />
+                        <AuthBody>
+                            <h1>
+                                {_t("Sign in")}
+                                {loader}
+                            </h1>
+                            {errorTextSection}
+                            {serverDeadSection}
+                            <ServerPicker
+                                serverConfig={this.props.serverConfig}
+                                onServerConfigChange={this.props.onServerConfigChange}
+                            />
+                            {this.renderLoginComponentForFlows()}
+                            {!defineToEp && footer}
+                        </AuthBody>
+                    </AuthPage>
+                )}
+            </>
         );
     }
 }

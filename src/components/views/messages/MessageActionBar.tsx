@@ -36,7 +36,7 @@ import type { Relations } from "matrix-js-sdk/src/models/relations";
 import { _t } from "../../../languageHandler";
 import dis, { defaultDispatcher } from "../../../dispatcher/dispatcher";
 import ContextMenu, { aboveLeftOf, ContextMenuTooltipButton, useContextMenu } from "../../structures/ContextMenu";
-import { isContentActionable, canEditContent, editEvent, canCancel } from "../../../utils/EventUtils";
+import { isContentActionable, canEditContent, editEvent, translateEvent, canCancel } from "../../../utils/EventUtils";
 import RoomContext, { TimelineRenderingType } from "../../../contexts/RoomContext";
 import Toolbar from "../../../accessibility/Toolbar";
 import { RovingAccessibleTooltipButton, useRovingTabIndex } from "../../../accessibility/RovingTabIndex";
@@ -364,6 +364,15 @@ export default class MessageActionBar extends React.PureComponent<IMessageAction
         editEvent(this.props.mxEvent, this.context.timelineRenderingType, this.props.getRelationsForEvent);
     };
 
+    private onTranslateClick = (e: React.MouseEvent): void => {
+        // Don't open the regular browser or our context menu on right-click
+        e.preventDefault();
+        e.stopPropagation();
+        console.log(11, "MessageActionBar 点击了翻译按钮");
+
+        translateEvent(this.props.mxEvent, this.context.timelineRenderingType, this.props.getRelationsForEvent);
+    };
+
     private readonly forbiddenThreadHeadMsgType = [MsgType.KeyVerificationRequest];
 
     private get showReplyInThreadAction(): boolean {
@@ -432,6 +441,15 @@ export default class MessageActionBar extends React.PureComponent<IMessageAction
                     key="edit"
                 >
                     <EditIcon />
+                </RovingAccessibleTooltipButton>,
+                <RovingAccessibleTooltipButton
+                    className="mx_MessageActionBar_iconButton"
+                    title="翻译"
+                    onClick={this.onTranslateClick}
+                    onContextMenu={this.onTranslateClick}
+                    key="translate"
+                >
+                    <div>翻译</div>
                 </RovingAccessibleTooltipButton>,
             );
         }

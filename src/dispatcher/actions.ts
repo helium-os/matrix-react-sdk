@@ -229,6 +229,11 @@ export enum Action {
     EditEvent = "edit_event",
 
     /**
+     * When a user starts to translate event
+     */
+    TranslateEvent = "translate_event",
+
+    /**
      * The user accepted pseudonymous analytics (i.e. posthog) from the toast
      * Payload: none
      */

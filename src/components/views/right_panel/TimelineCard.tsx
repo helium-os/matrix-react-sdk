@@ -27,7 +27,7 @@ import { RoomPermalinkCreator } from "../../../utils/permalinks/Permalinks";
 import { Layout } from "../../../settings/enums/Layout";
 import TimelinePanel from "../../structures/TimelinePanel";
 import { E2EStatus } from "../../../utils/ShieldUtils";
-import EditorStateTransfer from "../../../utils/EditorStateTransfer";
+import EditorStateTransfer, { TranslateStateTransfer } from "../../../utils/EditorStateTransfer";
 import RoomContext, { TimelineRenderingType } from "../../../contexts/RoomContext";
 import dis from "../../../dispatcher/dispatcher";
 import { _t } from "../../../languageHandler";
@@ -59,6 +59,7 @@ interface IProps {
 interface IState {
     thread?: Thread;
     editState?: EditorStateTransfer;
+    translateState?: TranslateStateTransfer;
     replyToEvent?: MatrixEvent;
     initialEventId?: string;
     isInitialEventHighlighted?: boolean;
@@ -129,6 +130,18 @@ export default class TimelineCard extends React.Component<IProps, IState> {
                 this.setState(
                     {
                         editState: payload.event ? new EditorStateTransfer(payload.event) : undefined,
+                    },
+                    () => {
+                        if (payload.event) {
+                            this.timelinePanel.current?.scrollToEventIfNeeded(payload.event.getId());
+                        }
+                    },
+                );
+                break;
+            case Action.TranslateEvent:
+                this.setState(
+                    {
+                        translateState: payload.event ? new TranslateStateTransfer(payload.event) : undefined,
                     },
                     () => {
                         if (payload.event) {
@@ -251,6 +264,7 @@ export default class TimelineCard extends React.Component<IProps, IState> {
                             permalinkCreator={this.props.permalinkCreator}
                             membersLoaded={true}
                             editState={this.state.editState}
+                            translateState={this.state.translateState}
                             eventId={this.state.initialEventId}
                             resizeNotifier={this.props.resizeNotifier}
                             highlightedEventId={highlightedEventId}

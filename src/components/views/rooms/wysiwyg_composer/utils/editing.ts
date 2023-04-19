@@ -38,6 +38,23 @@ export function endEditing(roomContext: IRoomState): void {
     });
 }
 
+export function endTranslating(roomContext: IRoomState): void {
+    // todo local storage
+    // localStorage.removeItem(this.editorRoomKey);
+    // localStorage.removeItem(this.editorStateKey);
+
+    // close the event translating and focus composer
+    dis.dispatch({
+        action: Action.TranslateEvent,
+        event: null,
+        timelineRenderingType: roomContext.timelineRenderingType,
+    });
+    dis.dispatch({
+        action: Action.FocusSendMessageComposer,
+        context: roomContext.timelineRenderingType,
+    });
+}
+
 export function cancelPreviousPendingEdit(mxClient: MatrixClient, editorStateTransfer: EditorStateTransfer): void {
     const originalEvent = editorStateTransfer.getEvent();
     const previousEdit = originalEvent.replacingEvent();

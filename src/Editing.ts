@@ -19,3 +19,7 @@ import { TimelineRenderingType } from "./contexts/RoomContext";
 export const editorRoomKey = (roomId: string, context: TimelineRenderingType): string =>
     `mx_edit_room_${roomId}_${context}`;
 export const editorStateKey = (eventId: string): string => `mx_edit_state_${eventId}`;
+
+export const translatorRoomKey = (roomId: string, context: TimelineRenderingType): string =>
+    `mx_translate_room_${roomId}_${context}`;
+export const translatorStateKey = (roomId: string, eventId: string): string => `mx_translate_${roomId}_${eventId}`;

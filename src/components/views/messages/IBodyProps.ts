@@ -39,6 +39,7 @@ export interface IBodyProps {
     maxImageHeight?: number;
     replacingEventId?: string;
     editState?: EditorStateTransfer;
+    translateState?: EditorStateTransfer;
     onMessageAllowed: () => void; // TODO: Docs
     permalinkCreator: RoomPermalinkCreator;
     mediaEventHelper: MediaEventHelper;

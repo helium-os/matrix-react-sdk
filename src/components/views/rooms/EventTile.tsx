@@ -77,6 +77,8 @@ import { isLocalRoom } from "../../../utils/localRoom/isLocalRoom";
 import { ElementCall } from "../../../models/Call";
 import { UnreadNotificationBadge } from "./NotificationBadge/UnreadNotificationBadge";
 import { EventTileThreadToolbar } from "./EventTile/EventTileThreadToolbar";
+import { translatorStateKey } from "../../../Editing";
+import * as StorageManager from "../../../utils/StorageManager";
 
 export type GetRelationsForEvent = (
     eventId: string,
@@ -191,6 +193,7 @@ export interface EventTileProps {
     // from one editor instance to another when remounting the editor
     // upon receiving the remote echo for an unsent event.
     editState?: EditorStateTransfer;
+    translateState?: EditorStateTransfer;
 
     // Event ID of the event replacing the content of this event, if any
     replacingEventId?: string;
@@ -359,7 +362,8 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
         return true;
     }
 
-    public componentDidMount(): void {
+    public async componentDidMount(): Promise<void> {
+        console.log(11111111, this.props);
         this.suppressReadReceiptAnimation = false;
         const client = MatrixClientPeg.get();
         if (!this.props.forExport) {
@@ -384,6 +388,28 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
 
         const room = client.getRoom(this.props.mxEvent.getRoomId());
         room?.on(ThreadEvent.New, this.onNewThread);
+
+        const translateItem = await this.translateItem();
+        console.log(
+            777777,
+            "EventTile componentDidMount:",
+            translateItem,
+            this.props.mxEvent.getRoomId(),
+            this.props.mxEvent.getId(),
+        );
+        // debugger;
+        if (translateItem) {
+            const event = room.findEventById(this.props.mxEvent.getId());
+            console.log(88888888, event.getId(), this.props.mxEvent.getId());
+            // alert("666666666666666" + this.props.mxEvent.getId());
+            setTimeout(() => {
+                dis.dispatch({
+                    action: Action.TranslateEvent,
+                    event: !event?.isRedacted() ? event : null,
+                    timelineRenderingType: this.context.timelineRenderingType,
+                });
+            }, 4000);
+        }
 
         this.verifyEvent();
     }
@@ -431,6 +457,17 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
         // re-check the sender verification as outgoing events progress through the send process.
         if (prevProps.eventSendStatus !== this.props.eventSendStatus) {
             this.verifyEvent();
+        }
+    }
+
+    private async translateItem(): Promise<string | undefined> {
+        try {
+            const roomKey = translatorStateKey(this.props.mxEvent.getRoomId(), this.props.mxEvent.getId());
+            console.log(2222222, "roomKey:", roomKey);
+            return await StorageManager.idbLoad("translate_list", roomKey);
+        } catch (error) {
+            logger.error(error);
+            return undefined;
         }
     }
 
@@ -797,6 +834,7 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
 
         // We don't want to show the menu when editing a message
         if (this.props.editState) return;
+        if (this.props.translateState) return;
 
         ev.preventDefault();
         ev.stopPropagation();

@@ -66,6 +66,7 @@ export interface EventTileTypeProps {
     forExport?: boolean;
     getRelationsForEvent?: GetRelationsForEvent;
     editState?: EditorStateTransfer;
+    translateState?: EditorStateTransfer;
     replacingEventId?: string;
     permalinkCreator: RoomPermalinkCreator;
     callEventGrouper?: LegacyCallEventGrouper;
@@ -313,6 +314,7 @@ export function renderTile(
         forExport,
         replacingEventId,
         editState,
+        translateState,
         highlights,
         highlightLink,
         showUrlPreview,
@@ -336,6 +338,7 @@ export function renderTile(
                 showUrlPreview,
                 onHeightChanged,
                 editState,
+                translateState,
                 replacingEventId,
                 getRelationsForEvent,
                 isSeeingThroughMessageHiddenForModeration,
@@ -348,6 +351,7 @@ export function renderTile(
                 forExport,
                 replacingEventId,
                 editState,
+                translateState,
                 highlights,
                 highlightLink,
                 showUrlPreview,
