@@ -100,7 +100,7 @@ import { FocusComposerPayload } from "../../dispatcher/payloads/FocusComposerPay
 import { LocalRoom, LocalRoomState } from "../../models/LocalRoom";
 import { createRoomFromLocalRoom } from "../../utils/direct-messages";
 import NewRoomIntro from "../views/rooms/NewRoomIntro";
-import EncryptionEvent from "../views/messages/EncryptionEvent";
+// import EncryptionEvent from "../views/messages/EncryptionEvent";
 import { StaticNotificationState } from "../../stores/notifications/StaticNotificationState";
 import { isLocalRoom } from "../../utils/localRoom/isLocalRoom";
 import { ShowThreadPayload } from "../../dispatcher/payloads/ShowThreadPayload";
@@ -253,7 +253,7 @@ function LocalRoomView(props: LocalRoomViewProps): ReactElement {
     let encryptionTile: ReactNode;
 
     if (encryptionEvent) {
-        encryptionTile = <EncryptionEvent mxEvent={encryptionEvent} />;
+        // encryptionTile = <EncryptionEvent mxEvent={encryptionEvent} />;
     }
 
     const onRetryClicked = (): void => {

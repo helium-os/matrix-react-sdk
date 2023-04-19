@@ -563,6 +563,7 @@ export default class TextualBody extends React.Component<IBodyProps, IState> {
     }
 
     public render(): React.ReactNode {
+        console.log(666, this.props);
         if (this.props.editState) {
             const isWysiwygComposerEnabled = SettingsStore.getValue("feature_wysiwyg_composer");
             return isWysiwygComposerEnabled ? (
@@ -575,6 +576,7 @@ export default class TextualBody extends React.Component<IBodyProps, IState> {
         const content = mxEvent.getContent();
         let isNotice = false;
         let isEmote = false;
+        console.log(777, content);
 
         // only strip reply if this is the original replying event, edits thereafter do not have the fallback
         const stripReply = !mxEvent.replacingEvent() && !!getParentEventId(mxEvent);

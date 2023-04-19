@@ -19,6 +19,7 @@ import { ConnectionError, MatrixError } from "matrix-js-sdk/src/http-api";
 import classNames from "classnames";
 import { logger } from "matrix-js-sdk/src/logger";
 import { ISSOFlow, LoginFlow, SSOAction } from "matrix-js-sdk/src/@types/auth";
+// import { createClient } from "matrix-js-sdk/src/matrix";
 
 import { _t, _td } from "../../../languageHandler";
 import Login from "../../../Login";
@@ -64,6 +65,8 @@ interface IProps {
     defaultDeviceDisplayName?: string;
     fragmentAfterLogin?: string;
     defaultUsername?: string;
+
+    jwtToken: string;
 
     // Called when the user has logged in. Params:
     // - The object returned by the login API
@@ -148,6 +151,7 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
     }
 
     public componentDidMount(): void {
+        // this.ssoLogin();
         this.initLoginLogic(this.props.serverConfig);
     }
 
@@ -359,6 +363,22 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
         }
     };
 
+    // private ssoLogin = (): void => {
+    //     const { hsUrl, isUrl } = this.props.serverConfig;
+    //     const cli = createClient({
+    //         baseUrl: hsUrl,
+    //         idBaseUrl: isUrl,
+    //     });
+    //     PlatformPeg.get()?.startSingleSignOn(cli, "sso", this.props.fragmentAfterLogin);
+    // };
+
+    private onLoginViaJwt = (): void => {
+        this.loginLogic.loginViaJwt(this.props.jwtToken).then(async (data) => {
+            this.setState({ serverIsAlive: true });
+            this.props.onLoggedIn(data, "123");
+        });
+    };
+
     private async initLoginLogic({ hsUrl, isUrl }: ValidatedServerConfig): Promise<void> {
         let isDefaultServer = false;
         if (
@@ -436,6 +456,8 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
                     busy: false,
                 });
             });
+
+        this.onLoginViaJwt();
     }
 
     private isSupportedFlow = (flow: LoginFlow): boolean => {
@@ -619,24 +641,35 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
             );
         }
 
+        // 自定义修改
+        const defineToEp = true;
+
         return (
-            <AuthPage>
-                <AuthHeader disableLanguageSelector={this.props.isSyncing || this.state.busyLoggingIn} />
-                <AuthBody>
-                    <h1>
-                        {_t("Sign in")}
-                        {loader}
-                    </h1>
-                    {errorTextSection}
-                    {serverDeadSection}
-                    <ServerPicker
-                        serverConfig={this.props.serverConfig}
-                        onServerConfigChange={this.props.onServerConfigChange}
-                    />
-                    {this.renderLoginComponentForFlows()}
-                    {footer}
-                </AuthBody>
-            </AuthPage>
+            <>
+                {defineToEp ? (
+                    <div className="mx_MatrixChat_splash">
+                        <Spinner />
+                    </div>
+                ) : (
+                    <AuthPage>
+                        <AuthHeader disableLanguageSelector={this.props.isSyncing || this.state.busyLoggingIn} />
+                        <AuthBody>
+                            <h1>
+                                {_t("Sign in")}
+                                {loader}
+                            </h1>
+                            {errorTextSection}
+                            {serverDeadSection}
+                            <ServerPicker
+                                serverConfig={this.props.serverConfig}
+                                onServerConfigChange={this.props.onServerConfigChange}
+                            />
+                            {this.renderLoginComponentForFlows()}
+                            {!defineToEp && footer}
+                        </AuthBody>
+                    </AuthPage>
+                )}
+            </>
         );
     }
 }

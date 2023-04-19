@@ -96,7 +96,7 @@ import UserSettingsDialog from "../views/dialogs/UserSettingsDialog";
 import CreateRoomDialog from "../views/dialogs/CreateRoomDialog";
 import KeySignatureUploadFailedDialog from "../views/dialogs/KeySignatureUploadFailedDialog";
 import IncomingSasDialog from "../views/dialogs/IncomingSasDialog";
-import CompleteSecurity from "./auth/CompleteSecurity";
+// import CompleteSecurity from "./auth/CompleteSecurity";
 import Welcome from "../views/auth/Welcome";
 import ForgotPassword from "./auth/ForgotPassword";
 import E2eSetup from "./auth/E2eSetup";
@@ -113,7 +113,7 @@ import { PosthogAnalytics } from "../../PosthogAnalytics";
 import { initSentry } from "../../sentry";
 import LegacyCallHandler from "../../LegacyCallHandler";
 import { showSpaceInvite } from "../../utils/space";
-import AccessibleButton from "../views/elements/AccessibleButton";
+// import AccessibleButton from "../views/elements/AccessibleButton";
 import { ActionPayload } from "../../dispatcher/payloads";
 import { SummarizedNotificationState } from "../../stores/notifications/SummarizedNotificationState";
 import Views from "../../Views";
@@ -176,6 +176,7 @@ interface IProps {
     defaultDeviceDisplayName?: string;
     // A function that makes a registration URL
     makeRegistrationUrl: (params: QueryDict) => string;
+    jwtToken: string;
 }
 
 interface IState {
@@ -1874,13 +1875,13 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
         this.setPageSubtitle();
     }
 
-    private onLogoutClick(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void {
-        dis.dispatch({
-            action: "logout",
-        });
-        event.stopPropagation();
-        event.preventDefault();
-    }
+    // private onLogoutClick(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void {
+    //     dis.dispatch({
+    //         action: "logout",
+    //     });
+    //     event.stopPropagation();
+    //     event.preventDefault();
+    // }
 
     private handleResize = (): void => {
         const LHS_THRESHOLD = 1000;
@@ -2029,7 +2030,13 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 </div>
             );
         } else if (this.state.view === Views.COMPLETE_SECURITY) {
-            view = <CompleteSecurity onFinished={this.onCompleteSecurityE2eSetupFinished} />;
+            // view = <CompleteSecurity onFinished={this.onCompleteSecurityE2eSetupFinished} />;
+            this.onCompleteSecurityE2eSetupFinished();
+            view = (
+                <div className="mx_MatrixChat_splash">
+                    <Spinner />
+                </div>
+            );
         } else if (this.state.view === Views.E2E_SETUP) {
             view = (
                 <E2eSetup
@@ -2073,11 +2080,11 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                     <div className="mx_MatrixChat_splash">
                         {errorBox}
                         <Spinner />
-                        <div className="mx_MatrixChat_splashButtons">
+                        {/* <div className="mx_MatrixChat_splashButtons">
                             <AccessibleButton kind="link_inline" onClick={this.onLogoutClick}>
                                 {_t("Logout")}
                             </AccessibleButton>
-                        </div>
+                        </div> */}
                     </div>
                 );
             }
@@ -2122,6 +2129,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                     onServerConfigChange={this.onServerConfigChange}
                     fragmentAfterLogin={fragmentAfterLogin}
                     defaultUsername={this.props.startingFragmentQueryParams.defaultUsername as string}
+                    jwtToken={this.props.jwtToken}
                     {...this.getServerProperties()}
                 />
             );
