@@ -33,7 +33,7 @@ import { ActionPayload } from "../../dispatcher/payloads";
 import { Action } from "../../dispatcher/actions";
 import { MatrixClientPeg } from "../../MatrixClientPeg";
 import { E2EStatus } from "../../utils/ShieldUtils";
-import EditorStateTransfer, { TranslateStateTransfer } from "../../utils/EditorStateTransfer";
+import EditorStateTransfer from "../../utils/EditorStateTransfer";
 import RoomContext, { TimelineRenderingType } from "../../contexts/RoomContext";
 import ContentMessages from "../../ContentMessages";
 import UploadBar from "./UploadBar";
@@ -71,7 +71,6 @@ interface IState {
     lastReply?: MatrixEvent | null;
     layout: Layout;
     editState?: EditorStateTransfer;
-    translateState?: TranslateStateTransfer;
     replyToEvent?: MatrixEvent;
     narrow: boolean;
 }
@@ -194,22 +193,6 @@ export default class ThreadView extends React.Component<IProps, IState> {
                 this.setState(
                     {
                         editState: payload.event ? new EditorStateTransfer(payload.event) : undefined,
-                    },
-                    () => {
-                        if (payload.event) {
-                            this.timelinePanel.current?.scrollToEventIfNeeded(payload.event.getId());
-                        }
-                    },
-                );
-                break;
-            case Action.TranslateEvent:
-                // Quit early if it's not a thread context
-                if (payload.timelineRenderingType !== TimelineRenderingType.Thread) return;
-                // Quit early if that's not a thread event
-                if (payload.event && !payload.event.getThread()) return;
-                this.setState(
-                    {
-                        translateState: payload.event ? new TranslateStateTransfer(payload.event) : null,
                     },
                     () => {
                         if (payload.event) {
@@ -425,7 +408,6 @@ export default class ThreadView extends React.Component<IProps, IState> {
                         permalinkCreator={this.props.permalinkCreator}
                         membersLoaded={true}
                         editState={this.state.editState}
-                        translateState={this.state.translateState}
                         eventId={this.props.initialEvent?.getId()}
                         highlightedEventId={highlightedEventId}
                         eventScrollIntoView={this.props.initialEventScrollIntoView}

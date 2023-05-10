@@ -78,7 +78,7 @@ import { getKeyBindingsManager } from "../../KeyBindingsManager";
 import { objectHasDiff } from "../../utils/objects";
 import SpaceRoomView from "./SpaceRoomView";
 import { IOpts } from "../../createRoom";
-import EditorStateTransfer, { TranslateStateTransfer } from "../../utils/EditorStateTransfer";
+import EditorStateTransfer from "../../utils/EditorStateTransfer";
 import ErrorDialog from "../views/dialogs/ErrorDialog";
 import UploadBar from "./UploadBar";
 import RoomStatusBar from "./RoomStatusBar";
@@ -223,7 +223,6 @@ export interface IRoomState {
     // if it did we don't want the room to be marked as read as soon as it is loaded.
     wasContextSwitch?: boolean;
     editState?: EditorStateTransfer;
-    translateState?: TranslateStateTransfer;
     timelineRenderingType: TimelineRenderingType;
     threadId?: string;
     liveTimeline?: EventTimeline;
@@ -1140,18 +1139,6 @@ export class RoomView extends React.Component<IRoomProps, IRoomState> {
                 if (payload.timelineRenderingType !== this.state.timelineRenderingType) return;
                 const editState = payload.event ? new EditorStateTransfer(payload.event) : undefined;
                 this.setState({ editState }, () => {
-                    if (payload.event) {
-                        this.messagePanel?.scrollToEventIfNeeded(payload.event.getId());
-                    }
-                });
-                break;
-            }
-
-            case Action.TranslateEvent: {
-                console.log(22, "RoomView Action.TranslateEvent 触发了");
-                if (payload.timelineRenderingType !== this.state.timelineRenderingType) return;
-                const translateState = payload.event ? new TranslateStateTransfer(payload.event) : undefined;
-                this.setState({ translateState }, () => {
                     if (payload.event) {
                         this.messagePanel?.scrollToEventIfNeeded(payload.event.getId());
                     }
@@ -2312,7 +2299,6 @@ export class RoomView extends React.Component<IRoomProps, IRoomState> {
                 showReactions={true}
                 layout={this.state.layout}
                 editState={this.state.editState}
-                translateState={this.state.translateState}
             />
         );
 

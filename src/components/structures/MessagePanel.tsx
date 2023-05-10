@@ -54,9 +54,8 @@ import { Action } from "../../dispatcher/actions";
 import { getEventDisplayInfo } from "../../utils/EventRenderingUtils";
 import { IReadReceiptInfo } from "../views/rooms/ReadReceiptMarker";
 import { haveRendererForEvent } from "../../events/EventTileFactory";
-import { editorRoomKey, translatorRoomKey, translatorStateKey } from "../../Editing";
+import { editorRoomKey } from "../../Editing";
 import { hasThreadSummary } from "../../utils/EventUtils";
-import * as StorageManager from "../../utils/StorageManager";
 import { VoiceBroadcastInfoEventType } from "../../voice-broadcast";
 
 const CONTINUATION_MAX_INTERVAL = 5 * 60 * 1000; // 5 minutes
@@ -179,7 +178,6 @@ interface IProps {
     resizeNotifier?: ResizeNotifier;
     permalinkCreator?: RoomPermalinkCreator;
     editState?: EditorStateTransfer;
-    translateState?: EditorStateTransfer;
 
     // callback which is called when the panel is scrolled.
     onScroll?(event: Event): void;
@@ -326,32 +324,7 @@ export default class MessagePanel extends React.Component<IProps, IState> {
                 timelineRenderingType: this.context.timelineRenderingType,
             });
         }
-
-        console.log(444444, this.props.events);
-        // const translateItem = await this.translateItem();
-        // if (!this.props.translateState && this.props.room && translateItem) {
-        //     const event = this.props.room.findEventById(translateItem);
-        //     defaultDispatcher.dispatch({
-        //         action: Action.TranslateEvent,
-        //         event: !event?.isRedacted() ? event : null,
-        //         timelineRenderingType: this.context.timelineRenderingType,
-        //     });
-        // }
     }
-
-    // private async translateItem(): Promise<string | undefined> {
-    //     if (!this.props.room) {
-    //         return undefined;
-    //     }
-
-    //     try {
-    //         const roomKey = translatorStateKey(this.props.room.roomId, this.props.);
-    //         return await StorageManager.idbLoad("translate_list", roomKey);
-    //     } catch (error) {
-    //         logger.error(error);
-    //         return undefined;
-    //     }
-    // }
 
     private shouldHideSender(): boolean {
         return this.props.room?.getInvitedAndJoinedMemberCount() <= 2 && this.props.layout === Layout.Bubble;
@@ -737,7 +710,6 @@ export default class MessagePanel extends React.Component<IProps, IState> {
         const ret: ReactNode[] = [];
 
         const isEditing = this.props.editState?.getEvent().getId() === mxEv.getId();
-        const isTranslating = this.props.translateState?.getEvent().getId() === mxEv.getId();
         // local echoes have a fake date, which could even be yesterday. Treat them as 'today' for the date separators.
         let ts1 = mxEv.getTs();
         let eventDate = mxEv.getDate();
@@ -815,8 +787,6 @@ export default class MessagePanel extends React.Component<IProps, IState> {
                 isRedacted={mxEv.isRedacted()}
                 replacingEventId={mxEv.replacingEventId()}
                 editState={isEditing ? this.props.editState : undefined}
-                editState={isEditing && this.props.editState}
-                translateState={isTranslating && this.props.translateState}
                 onHeightChanged={this.onHeightChanged}
                 readReceipts={readReceipts}
                 readReceiptMap={this.readReceiptMap}

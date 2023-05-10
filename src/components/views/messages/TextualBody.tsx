@@ -40,7 +40,6 @@ import Spoiler from "../elements/Spoiler";
 import QuestionDialog from "../dialogs/QuestionDialog";
 import MessageEditHistoryDialog from "../dialogs/MessageEditHistoryDialog";
 import EditMessageComposer from "../rooms/EditMessageComposer";
-import TranslateMessageComposer from "../rooms/TranslateMessageComposer";
 import LinkPreviewGroup from "../rooms/LinkPreviewGroup";
 import { IBodyProps } from "./IBodyProps";
 import RoomContext from "../../../contexts/RoomContext";
@@ -308,7 +307,6 @@ export default class TextualBody extends React.Component<IBodyProps, IState> {
             nextProps.highlightLink !== this.props.highlightLink ||
             nextProps.showUrlPreview !== this.props.showUrlPreview ||
             nextProps.editState !== this.props.editState ||
-            nextProps.translateState !== this.props.translateState ||
             nextState.links !== this.state.links ||
             nextState.widgetHidden !== this.state.widgetHidden ||
             nextProps.isSeeingThroughMessageHiddenForModeration !== this.props.isSeeingThroughMessageHiddenForModeration
@@ -565,7 +563,6 @@ export default class TextualBody extends React.Component<IBodyProps, IState> {
     }
 
     public render(): React.ReactNode {
-        console.log(66, "TextualBody", this.props);
         if (this.props.editState) {
             const isWysiwygComposerEnabled = SettingsStore.getValue("feature_wysiwyg_composer");
             return isWysiwygComposerEnabled ? (
@@ -578,7 +575,6 @@ export default class TextualBody extends React.Component<IBodyProps, IState> {
         const content = mxEvent.getContent();
         let isNotice = false;
         let isEmote = false;
-        console.log(66, "TextualBody", content);
 
         // only strip reply if this is the original replying event, edits thereafter do not have the fallback
         const stripReply = !mxEvent.replacingEvent() && !!getParentEventId(mxEvent);
@@ -655,19 +651,12 @@ export default class TextualBody extends React.Component<IBodyProps, IState> {
                 </div>
             );
         }
-        console.log(this.props.translateState);
-        // debugger;
-        // alert(`${JSON.stringify(this.props.translateState) + mxEvent.getId()}`);
-        if (this.props.translateState) {
-            return (
-                <div className="mx_MTextBody mx_EventTile_content">
-                    {body}
-                    <TranslateMessageComposer translateState={this.props.translateState} translateContent={content} />
-                </div>
-            );
-        }
         return (
-            <div className="mx_MTextBody mx_EventTile_content" onClick={this.onBodyLinkClick}>
+            <div
+                className="mx_MTextBody mx_EventTile_content mx_translatable"
+                onClick={this.onBodyLinkClick}
+                data-user-id={this.props.mxEvent.event.sender}
+            >
                 {body}
                 {widgets}
             </div>

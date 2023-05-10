@@ -263,20 +263,6 @@ export function editEvent(
     }
 }
 
-export function translateEvent(
-    mxEvent: MatrixEvent,
-    timelineRenderingType: TimelineRenderingType,
-    getRelationsForEvent?: GetRelationsForEvent,
-): void {
-    if (!canEditContent(mxEvent)) return;
-
-    defaultDispatcher.dispatch({
-        action: Action.TranslateEvent,
-        event: mxEvent,
-        timelineRenderingType: timelineRenderingType,
-    });
-}
-
 export function canCancel(status?: EventStatus | null): boolean {
     return status === EventStatus.QUEUED || status === EventStatus.NOT_SENT || status === EventStatus.ENCRYPTING;
 }

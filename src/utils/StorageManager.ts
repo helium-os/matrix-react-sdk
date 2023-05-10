@@ -198,6 +198,7 @@ async function idbInit(): Promise<void> {
             db.createObjectStore("pickleKey");
             db.createObjectStore("account");
             db.createObjectStore("translate_list");
+            db.createObjectStore("translate_rooms");
         };
     });
 }

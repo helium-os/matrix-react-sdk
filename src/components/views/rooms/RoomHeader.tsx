@@ -18,6 +18,7 @@ limitations under the License.
 import React, { FC, useState, useMemo, useCallback } from "react";
 import classNames from "classnames";
 import { throttle } from "lodash";
+import { sha256 } from "js-sha256";
 import { RoomStateEvent } from "matrix-js-sdk/src/models/room-state";
 import { CallType } from "matrix-js-sdk/src/webrtc/call";
 import { ISearchResults } from "matrix-js-sdk/src/@types/search";
@@ -29,6 +30,7 @@ import defaultDispatcher from "../../../dispatcher/dispatcher";
 import { Action } from "../../../dispatcher/actions";
 import { UserTab } from "../dialogs/UserTab";
 import SettingsStore from "../../../settings/SettingsStore";
+import { getCurrentLanguage } from "../../../languageHandler";
 import RoomHeaderButtons from "../right_panel/RoomHeaderButtons";
 import E2EIcon from "./E2EIcon";
 import DecoratedRoomAvatar from "../avatars/DecoratedRoomAvatar";
@@ -37,6 +39,7 @@ import AccessibleTooltipButton from "../elements/AccessibleTooltipButton";
 import RoomTopic from "../elements/RoomTopic";
 import RoomName from "../elements/RoomName";
 import { E2EStatus } from "../../../utils/ShieldUtils";
+import * as StorageManager from "../../../utils/StorageManager";
 import { IOOBData } from "../../../stores/ThreepidInviteStore";
 import { SearchScope } from "./SearchBar";
 import { aboveLeftOf, ContextMenuTooltipButton, useContextMenu } from "../../structures/ContextMenu";
@@ -479,6 +482,9 @@ export interface IProps {
 interface IState {
     contextMenuPosition?: DOMRect;
     rightPanelOpen: boolean;
+    hasOberver: boolean;
+    showTranslateOptions: boolean;
+    targetLanguage: string | undefined;
 }
 
 export default class RoomHeader extends React.Component<IProps, IState> {
@@ -499,12 +505,23 @@ export default class RoomHeader extends React.Component<IProps, IState> {
         notiStore.on(NotificationStateEvents.Update, this.onNotificationUpdate);
         this.state = {
             rightPanelOpen: RightPanelStore.instance.isOpen,
+            hasOberver: false,
+            showTranslateOptions: false,
+            targetLanguage: undefined,
         };
     }
 
     public componentDidMount(): void {
         this.client.on(RoomStateEvent.Events, this.onRoomStateEvents);
         RightPanelStore.instance.on(UPDATE_EVENT, this.onRightPanelStoreUpdate);
+        // 如果该房间内容被翻译过，重新加载后确保会显示之前的翻译内容
+        StorageManager.idbLoad("translate_rooms", this.props.room.roomId).then((res) => {
+            if (res && res !== getCurrentLanguage()) {
+                this.setState({ targetLanguage: res });
+                this.createTranslateObserver();
+                this.doTranslate(res);
+            }
+        });
     }
 
     public componentWillUnmount(): void {
@@ -560,8 +577,150 @@ export default class RoomHeader extends React.Component<IProps, IState> {
         });
     };
 
+    // 测试
+    private getTranslateData = async (text: string, language: string): Promise<string> => {
+        const encryptText = sha256(`${text}-${language}`);
+        const cacheContent = await StorageManager.idbLoad("translate_list", encryptText);
+        if (cacheContent) {
+            return new Promise((resolve) => {
+                resolve(cacheContent);
+            });
+        }
+        return fetch("https://copilot-proxy.org1.helium/api/v1/translates/test")
+            .then((response) => response.json())
+            .then((res) => {
+                const data = res.data;
+                StorageManager.idbSave("translate_list", encryptText, data);
+                return data;
+            });
+    };
+
+    private doTranslate = async (language: string, parentElement?: HTMLElement): Promise<void> => {
+        const myUserId = localStorage.getItem("mx_user_id");
+        const domList = (parentElement || document).querySelectorAll(".mx_translatable");
+
+        for (let i = 0; i < domList.length; i++) {
+            const item = domList[i];
+            const itemUserId = item.getAttribute("data-user-id");
+            const firstChild = item.firstChild;
+            const needTranslateText = firstChild.textContent;
+            const nodes = item.getElementsByClassName("mx_translate_content");
+
+            // 删除翻译过的内容（切换语言时）
+            if (nodes.length) {
+                Array.from(nodes).forEach((node) => {
+                    item.removeChild(node);
+                });
+            }
+
+            // 只翻译其他人的内容
+            if (itemUserId !== myUserId) {
+                const div = document.createElement("div");
+                div.className = "mx_translate_content";
+
+                const span = document.createElement("span");
+                const span2 = document.createElement("span");
+                span2.textContent = `(文本内容：${needTranslateText}-${language})`;
+
+                const data = await this.getTranslateData(needTranslateText, language);
+                span.textContent = data;
+
+                div.appendChild(firstChild.cloneNode(true));
+                div.appendChild(span2);
+                div.appendChild(span);
+                item.appendChild(div);
+            }
+        }
+    };
+
+    // 监听新消息自动翻译
+    private createTranslateObserver = (): void => {
+        if (!this.state.hasOberver) {
+            const targetNode = document.querySelector(".mx_RoomView_MessageList");
+            const observer = new MutationObserver(this.callback);
+            observer.observe(targetNode, { childList: true });
+            this.setState({ hasOberver: true });
+        }
+    };
+
+    private callback = (mutationList): void => {
+        mutationList.forEach((mutation) => {
+            switch (mutation.type) {
+                case "childList": {
+                    const addedNodes = mutation.addedNodes;
+                    if (addedNodes.length > 0) {
+                        for (let j = 0; j < addedNodes.length; j++) {
+                            const children = addedNodes[j].children;
+                            const targetParentElement = Array.from(children).find(
+                                (child: Element) => child.className === "mx_EventTile_line",
+                            ) as HTMLElement;
+                            if (targetParentElement) {
+                                this.doTranslate(this.state.targetLanguage, targetParentElement);
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        });
+    };
+
     private renderButtons(isVideoRoom: boolean): React.ReactNode {
         const startButtons: JSX.Element[] = [];
+
+        startButtons.push(
+            <div style={{ cursor: "pointer", position: "relative" }}>
+                <div
+                    onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.setState({ showTranslateOptions: !this.state.showTranslateOptions });
+                    }}
+                    key="translate-button-custome"
+                >
+                    翻译
+                </div>
+                {this.state.showTranslateOptions && (
+                    <div
+                        style={{
+                            position: "absolute",
+                            top: 38,
+                            left: "-8px",
+                            background: "#fff",
+                            width: 180,
+                            zIndex: 2,
+                            padding: 8,
+                            boxShadow: "4px 4px 12px 0 rgba(118, 131, 156, 0.6)",
+                            borderRadius: 8,
+                        }}
+                    >
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>目标语言：</span>
+                            <select
+                                style={{ width: 100 }}
+                                onChange={(e) => {
+                                    const lan = e.target.value;
+                                    // 相同语种不做翻译
+                                    if (lan === getCurrentLanguage()) return;
+
+                                    this.createTranslateObserver();
+
+                                    // 保存被翻译的房间
+                                    StorageManager.idbSave("translate_rooms", this.props.room.roomId, lan);
+                                    this.setState({ showTranslateOptions: false, targetLanguage: lan });
+                                    this.doTranslate(lan);
+                                }}
+                                value={this.state.targetLanguage}
+                            >
+                                <option value="">请选择语言</option>
+                                <option value="zh-hans">中文</option>
+                                <option value="en">英文</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
+            </div>,
+        );
 
         if (!this.props.viewingCall && this.props.inRoom && !this.context.tombstone) {
             startButtons.push(<CallButtons key="calls" room={this.props.room} />);
