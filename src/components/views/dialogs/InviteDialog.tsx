@@ -49,7 +49,7 @@ import { mediaFromMxc } from "../../../customisations/Media";
 import BaseAvatar from "../avatars/BaseAvatar";
 import { SearchResultAvatar } from "../avatars/SearchResultAvatar";
 import AccessibleButton, { ButtonEvent } from "../elements/AccessibleButton";
-import { selectText } from "../../../utils/strings";
+// import { selectText } from "../../../utils/strings";
 import Field from "../elements/Field";
 import TabbedView, { Tab, TabLocation } from "../../structures/TabbedView";
 import Dialpad from "../voip/DialPad";
@@ -59,7 +59,7 @@ import BaseDialog from "./BaseDialog";
 import DialPadBackspaceButton from "../elements/DialPadBackspaceButton";
 import LegacyCallHandler from "../../../LegacyCallHandler";
 // import UserIdentifierCustomisations from "../../../customisations/UserIdentifier";
-import CopyableText from "../elements/CopyableText";
+// import CopyableText from "../elements/CopyableText";
 import { ScreenName } from "../../../PosthogTrackers";
 import { KeyBindingAction } from "../../../accessibility/KeyboardShortcuts";
 import { getKeyBindingsManager } from "../../../KeyBindingsManager";
@@ -1176,10 +1176,10 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         this.setState({ currentTabId: tabId });
     };
 
-    private async onLinkClick(e: React.MouseEvent<HTMLAnchorElement>): Promise<void> {
-        e.preventDefault();
-        selectText(e.currentTarget);
-    }
+    // private async onLinkClick(e: React.MouseEvent<HTMLAnchorElement>): Promise<void> {
+    //     e.preventDefault();
+    //     selectText(e.currentTarget);
+    // }
 
     private get screenName(): ScreenName | undefined {
         switch (this.props.kind) {
@@ -1251,30 +1251,30 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
             if (identityServersEnabled) {
                 helpText = _t(
-                    "Start a conversation with someone using their name, email address or username (like <userId/>).",
+                    "Start a conversation with someone using their name, email address or username.",
                     {},
                     {
-                        userId: () => {
-                            return (
-                                <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
-                                    {userId}
-                                </a>
-                            );
-                        },
+                        // userId: () => {
+                        //     return (
+                        //         <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
+                        //             {userId}
+                        //         </a>
+                        //     );
+                        // },
                     },
                 );
             } else {
                 helpText = _t(
-                    "Start a conversation with someone using their name or username (like <userId/>).",
+                    "Start a conversation with someone using their name or username.",
                     {},
                     {
-                        userId: () => {
-                            return (
-                                <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
-                                    {userId}
-                                </a>
-                            );
-                        },
+                        // userId: () => {
+                        //     return (
+                        //         <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
+                        //             {userId}
+                        //         </a>
+                        //     );
+                        // },
                     },
                 );
             }
@@ -1287,16 +1287,17 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     <p>{_t("If you can't see who you're looking for, send them your invite link below.")}</p>
                 </div>
             );
-            const link = makeUserPermalink(MatrixClientPeg.get().getUserId()!);
+            // const link = makeUserPermalink(MatrixClientPeg.get().getUserId()!);
             footer = (
-                <div className="mx_InviteDialog_footer">
-                    <h3>{_t("Or send invite link")}</h3>
-                    <CopyableText getTextToCopy={() => makeUserPermalink(MatrixClientPeg.get().getUserId()!)}>
-                        <a href={link} onClick={this.onLinkClick}>
-                            {link}
-                        </a>
-                    </CopyableText>
-                </div>
+                <></>
+                // <div className="mx_InviteDialog_footer">
+                //     <h3>{_t("Or send invite link")}</h3>
+                //     <CopyableText getTextToCopy={() => makeUserPermalink(MatrixClientPeg.get().getUserId()!)}>
+                //         <a href={link} onClick={this.onLinkClick}>
+                //             {link}
+                //         </a>
+                //     </CopyableText>
+                // </div>
             );
         } else if (this.props.kind === InviteKind.Invite) {
             const roomId = this.props.roomId;
@@ -1444,7 +1445,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                 <div className="error">{this.state.errorText}</div>
                 {onlyOneThreepidNote}
                 {results}
-                {footer}
+                {/* {footer} */}
             </React.Fragment>
         );
 
