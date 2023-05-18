@@ -1149,7 +1149,6 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
         // Use `getSender()` because searched events might not have a proper `sender`.
         const isOwnEvent = this.props.mxEvent?.getSender() === MatrixClientPeg.get().getUserId();
 
-        // console.log(222, this.context.timelineRenderingType);
         switch (this.context.timelineRenderingType) {
             case TimelineRenderingType.Thread: {
                 return React.createElement(
@@ -1334,7 +1333,6 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
             }
 
             default: {
-                // console.log(111, this.props);
                 // Pinned, Room, Search
                 // tab-index=-1 to allow it to be focusable but do not add tab stop for it, primarily for screen readers
                 return React.createElement(

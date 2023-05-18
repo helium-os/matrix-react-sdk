@@ -114,9 +114,9 @@ export default class UserProvider extends AutocompleteProvider {
 
         const fullMatch = command?.[0];
         // Don't search if the query is a single "@"
-        if (fullMatch && fullMatch !== "@") {
+        if (fullMatch) {
             // Don't include the '@' in our search query - it's only used as a way to trigger completion
-            const query = fullMatch.startsWith("@") ? fullMatch.substring(1) : fullMatch;
+            const query = fullMatch;
             return this.matcher.match(query, limit).map((user) => {
                 const description = UserIdentifierCustomisations.getDisplayUserIdentifier?.(user.userId, {
                     roomId: this.room.roomId,
