@@ -1251,30 +1251,32 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
             if (identityServersEnabled) {
                 helpText = _t(
-                    "Start a conversation with someone using their name, email address or username.",
+                    "Start a conversation with someone using their name, email address or username (like <userId/>).",
                     {},
                     {
-                        // userId: () => {
-                        //     return (
-                        //         <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
-                        //             {userId}
-                        //         </a>
-                        //     );
-                        // },
+                        userId: () => {
+                            return (
+                                <span>username</span>
+                                // <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
+                                //     {userId}
+                                // </a>
+                            );
+                        },
                     },
                 );
             } else {
                 helpText = _t(
-                    "Start a conversation with someone using their name or username.",
+                    "Start a conversation with someone using their name or username (like <userId/>).",
                     {},
                     {
-                        // userId: () => {
-                        //     return (
-                        //         <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
-                        //             {userId}
-                        //         </a>
-                        //     );
-                        // },
+                        userId: () => {
+                            return (
+                                <span>username</span>
+                                // <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
+                                //     {userId}
+                                // </a>
+                            );
+                        },
                     },
                 );
             }
@@ -1445,7 +1447,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                 <div className="error">{this.state.errorText}</div>
                 {onlyOneThreepidNote}
                 {results}
-                {/* {footer} */}
+                {footer}
             </React.Fragment>
         );
 
