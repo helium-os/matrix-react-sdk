@@ -149,6 +149,38 @@ export default class Login {
                 throw error;
             });
     }
+
+    public loginViaJwt(token: string): Promise<IMatrixClientCreds> {
+        const tryFallbackHs = (originalError: Error): Promise<IMatrixClientCreds> => {
+            return sendLoginRequest(this.fallbackHsUrl!, this.isUrl, "org.matrix.login.jwt", {
+                token,
+                initial_device_display_name: this.defaultDeviceDisplayName,
+            }).catch((fallbackError) => {
+                logger.log("fallback HS login failed", fallbackError);
+                // throw the original error
+                throw originalError;
+            });
+        };
+
+        let originalLoginError: Error | null = null;
+        return sendLoginRequest(this.hsUrl, this.isUrl, "org.matrix.login.jwt", {
+            token,
+            initial_device_display_name: this.defaultDeviceDisplayName,
+        })
+            .catch((error) => {
+                originalLoginError = error;
+                if (error.httpStatus === 403) {
+                    if (this.fallbackHsUrl) {
+                        return tryFallbackHs(originalLoginError!);
+                    }
+                }
+                throw originalLoginError;
+            })
+            .catch((error) => {
+                logger.log("Login failed", error);
+                throw error;
+            });
+    }
 }
 
 /**

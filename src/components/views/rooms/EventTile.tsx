@@ -1357,7 +1357,7 @@ export class UnwrappedEventTile extends React.Component<EventTileProps, IState> 
                         {ircPadlock}
                         {avatar}
                         <div className={lineClasses} key="mx_EventTile_line" onContextMenu={this.onContextMenu}>
-                            {this.renderContextMenu()}
+                            {/* {this.renderContextMenu()} */}
                             {groupTimestamp}
                             {groupPadlock}
                             {replyChain}

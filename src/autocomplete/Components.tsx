@@ -72,7 +72,7 @@ export const PillCompletion = forwardRef<IPillCompletionProps, any>((props, ref)
             {children}
             <span className="mx_Autocomplete_Completion_title">{title}</span>
             <span className="mx_Autocomplete_Completion_subtitle">{subtitle}</span>
-            <span className="mx_Autocomplete_Completion_description">{description}</span>
+            {/* <span className="mx_Autocomplete_Completion_description">{description}</span> */}
         </div>
     );
 });

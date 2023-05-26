@@ -26,8 +26,8 @@ import { Icon as EmailPillAvatarIcon } from "../../../../res/img/icon-email-pill
 import { _t, _td } from "../../../languageHandler";
 import { MatrixClientPeg } from "../../../MatrixClientPeg";
 import {
-    getHostnameFromMatrixServerName,
-    getServerName,
+    // getHostnameFromMatrixServerName,
+    // getServerName,
     makeRoomPermalink,
     makeUserPermalink,
 } from "../../../utils/permalinks/Permalinks";
@@ -49,7 +49,7 @@ import { mediaFromMxc } from "../../../customisations/Media";
 import BaseAvatar from "../avatars/BaseAvatar";
 import { SearchResultAvatar } from "../avatars/SearchResultAvatar";
 import AccessibleButton, { ButtonEvent } from "../elements/AccessibleButton";
-import { selectText } from "../../../utils/strings";
+// import { selectText } from "../../../utils/strings";
 import Field from "../elements/Field";
 import TabbedView, { Tab, TabLocation } from "../../structures/TabbedView";
 import Dialpad from "../voip/DialPad";
@@ -58,8 +58,8 @@ import Spinner from "../elements/Spinner";
 import BaseDialog from "./BaseDialog";
 import DialPadBackspaceButton from "../elements/DialPadBackspaceButton";
 import LegacyCallHandler from "../../../LegacyCallHandler";
-import UserIdentifierCustomisations from "../../../customisations/UserIdentifier";
-import CopyableText from "../elements/CopyableText";
+// import UserIdentifierCustomisations from "../../../customisations/UserIdentifier";
+// import CopyableText from "../elements/CopyableText";
 import { ScreenName } from "../../../PosthogTrackers";
 import { KeyBindingAction } from "../../../accessibility/KeyboardShortcuts";
 import { getKeyBindingsManager } from "../../../KeyBindingsManager";
@@ -242,13 +242,13 @@ class DMRoomTile extends React.PureComponent<IDMRoomTileProps> {
             </span>
         );
 
-        const userIdentifier = UserIdentifierCustomisations.getDisplayUserIdentifier(this.props.member.userId, {
-            withDisplayName: true,
-        });
+        // const userIdentifier = UserIdentifierCustomisations.getDisplayUserIdentifier(this.props.member.userId, {
+        //     withDisplayName: true,
+        // });
 
-        const caption = (this.props.member as ThreepidMember).isEmail
-            ? _t("Invite by email")
-            : this.highlightName(userIdentifier || this.props.member.userId);
+        // const caption = (this.props.member as ThreepidMember).isEmail
+        //     ? _t("Invite by email")
+        //     : this.highlightName(userIdentifier || this.props.member.userId);
 
         return (
             <div className="mx_InviteDialog_tile mx_InviteDialog_tile--room" onClick={this.onClick}>
@@ -257,7 +257,7 @@ class DMRoomTile extends React.PureComponent<IDMRoomTileProps> {
                     <div className="mx_InviteDialog_tile_nameStack_name">
                         {this.highlightName(this.props.member.name)}
                     </div>
-                    <div className="mx_InviteDialog_tile_nameStack_userId">{caption}</div>
+                    {/* <div className="mx_InviteDialog_tile_nameStack_userId">{caption}</div> */}
                 </span>
                 {timestamp}
             </div>
@@ -635,45 +635,73 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
                 if (!r.results) r.results = [];
 
+                const mxUserId = localStorage.getItem("mx_user_id");
+                const serverName = mxUserId.split(":").splice(1).join();
+                fetch(`/heliumos-user-api/api/v1/users?name=${encodeURIComponent(term)}`)
+                    .then((response) => response.json())
+                    .then((res) => {
+                        const data = res.data;
+                        if (data.length) {
+                            for (let i = 0; i < data.length; i++) {
+                                const item = data[i];
+                                if (item.username) {
+                                    const userId = `@${item.id}:${serverName}`;
+                                    r.results.splice(0, 0, {
+                                        user_id: userId,
+                                        display_name: item.display_name || item.username,
+                                        avatar_url: null,
+                                    });
+                                }
+                            }
+                        }
+
+                        this.setState({
+                            serverResultsMixin: r.results.map((u) => ({
+                                userId: u.user_id,
+                                user: new DirectoryMember(u),
+                            })),
+                        });
+                    });
+
                 // While we're here, try and autocomplete a search result for the mxid itself
                 // if there's no matches (and the input looks like a mxid).
-                if (term[0] === "@" && term.indexOf(":") > 1) {
-                    try {
-                        const profile = await MatrixClientPeg.get().getProfileInfo(term);
-                        if (profile) {
-                            // If we have a profile, we have enough information to assume that
-                            // the mxid can be invited - add it to the list. We stick it at the
-                            // top so it is most obviously presented to the user.
-                            r.results.splice(0, 0, {
-                                user_id: term,
-                                display_name: profile["displayname"],
-                                avatar_url: profile["avatar_url"],
-                            });
-                        }
-                    } catch (e) {
-                        logger.warn("Non-fatal error trying to make an invite for a user ID");
-                        logger.warn(e);
+                // if (term[0] === "@" && term.indexOf(":") > 1) {
+                //     try {
+                //         const profile = await MatrixClientPeg.get().getProfileInfo(term);
+                //         if (profile) {
+                //             // If we have a profile, we have enough information to assume that
+                //             // the mxid can be invited - add it to the list. We stick it at the
+                //             // top so it is most obviously presented to the user.
+                //             r.results.splice(0, 0, {
+                //                 user_id: term,
+                //                 display_name: profile["displayname"],
+                //                 avatar_url: profile["avatar_url"],
+                //             });
+                //         }
+                //     } catch (e) {
+                //         logger.warn("Non-fatal error trying to make an invite for a user ID");
+                //         logger.warn(e);
 
-                        // Reuse logic from Permalinks as a basic MXID validity check
-                        const serverName = getServerName(term);
-                        const domain = getHostnameFromMatrixServerName(serverName);
-                        if (domain) {
-                            // Add a result anyways, just without a profile. We stick it at the
-                            // top so it is most obviously presented to the user.
-                            r.results.splice(0, 0, {
-                                user_id: term,
-                                display_name: term,
-                            });
-                        }
-                    }
-                }
+                //         // Reuse logic from Permalinks as a basic MXID validity check
+                //         const serverName = getServerName(term);
+                //         const domain = getHostnameFromMatrixServerName(serverName);
+                //         if (domain) {
+                //             // Add a result anyways, just without a profile. We stick it at the
+                //             // top so it is most obviously presented to the user.
+                //             r.results.splice(0, 0, {
+                //                 user_id: term,
+                //                 display_name: term,
+                //             });
+                //         }
+                //     }
+                // }
 
-                this.setState({
-                    serverResultsMixin: r.results.map((u) => ({
-                        userId: u.user_id,
-                        user: new DirectoryMember(u),
-                    })),
-                });
+                // this.setState({
+                //     serverResultsMixin: r.results.map((u) => ({
+                //         userId: u.user_id,
+                //         user: new DirectoryMember(u),
+                //     })),
+                // });
             })
             .catch((e) => {
                 logger.error("Error searching user directory:");
@@ -1148,10 +1176,10 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         this.setState({ currentTabId: tabId });
     };
 
-    private async onLinkClick(e: React.MouseEvent<HTMLAnchorElement>): Promise<void> {
-        e.preventDefault();
-        selectText(e.currentTarget);
-    }
+    // private async onLinkClick(e: React.MouseEvent<HTMLAnchorElement>): Promise<void> {
+    //     e.preventDefault();
+    //     selectText(e.currentTarget);
+    // }
 
     private get screenName(): ScreenName | undefined {
         switch (this.props.kind) {
@@ -1228,9 +1256,10 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     {
                         userId: () => {
                             return (
-                                <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
-                                    {userId}
-                                </a>
+                                <span>username</span>
+                                // <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
+                                //     {userId}
+                                // </a>
                             );
                         },
                     },
@@ -1242,9 +1271,10 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     {
                         userId: () => {
                             return (
-                                <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
-                                    {userId}
-                                </a>
+                                <span>username</span>
+                                // <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
+                                //     {userId}
+                                // </a>
                             );
                         },
                     },
@@ -1259,16 +1289,17 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     <p>{_t("If you can't see who you're looking for, send them your invite link below.")}</p>
                 </div>
             );
-            const link = makeUserPermalink(MatrixClientPeg.get().getUserId()!);
+            // const link = makeUserPermalink(MatrixClientPeg.get().getUserId()!);
             footer = (
-                <div className="mx_InviteDialog_footer">
-                    <h3>{_t("Or send invite link")}</h3>
-                    <CopyableText getTextToCopy={() => makeUserPermalink(MatrixClientPeg.get().getUserId()!)}>
-                        <a href={link} onClick={this.onLinkClick}>
-                            {link}
-                        </a>
-                    </CopyableText>
-                </div>
+                <></>
+                // <div className="mx_InviteDialog_footer">
+                //     <h3>{_t("Or send invite link")}</h3>
+                //     <CopyableText getTextToCopy={() => makeUserPermalink(MatrixClientPeg.get().getUserId()!)}>
+                //         <a href={link} onClick={this.onLinkClick}>
+                //             {link}
+                //         </a>
+                //     </CopyableText>
+                // </div>
             );
         } else if (this.props.kind === InviteKind.Invite) {
             const roomId = this.props.roomId;

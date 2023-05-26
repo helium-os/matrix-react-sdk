@@ -117,9 +117,13 @@ export default class QueryMatcher<T extends {}> {
             if (this._options.shouldMatchWordsOnly) {
                 resultKey = resultKey.replace(/[^\w]/g, "");
             }
-            const index = resultKey.indexOf(query);
-            if (index !== -1) {
-                matches.push(...candidates.map((candidate) => ({ index, ...candidate })));
+            if (query === "@") {
+                matches.push(...candidates.map((candidate) => ({ index: -1, ...candidate })));
+            } else {
+                const index = resultKey.indexOf(query.substring(1));
+                if (index !== -1) {
+                    matches.push(...candidates.map((candidate) => ({ index, ...candidate })));
+                }
             }
         }
 

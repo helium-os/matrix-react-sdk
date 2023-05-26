@@ -19,7 +19,7 @@ import { ConnectionError, MatrixError } from "matrix-js-sdk/src/http-api";
 import classNames from "classnames";
 import { logger } from "matrix-js-sdk/src/logger";
 import { ISSOFlow, LoginFlow, SSOAction } from "matrix-js-sdk/src/@types/auth";
-import { createClient } from "matrix-js-sdk/src/matrix";
+// import { createClient } from "matrix-js-sdk/src/matrix";
 
 import { _t, _td } from "../../../languageHandler";
 import Login from "../../../Login";
@@ -65,6 +65,8 @@ interface IProps {
     defaultDeviceDisplayName?: string;
     fragmentAfterLogin?: string;
     defaultUsername?: string;
+
+    jwtToken: string;
 
     // Called when the user has logged in. Params:
     // - The object returned by the login API
@@ -149,7 +151,7 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
     }
 
     public componentDidMount(): void {
-        this.ssoLogin();
+        // this.ssoLogin();
         this.initLoginLogic(this.props.serverConfig);
     }
 
@@ -361,13 +363,20 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
         }
     };
 
-    private ssoLogin = (): void => {
-        const { hsUrl, isUrl } = this.props.serverConfig;
-        const cli = createClient({
-            baseUrl: hsUrl,
-            idBaseUrl: isUrl,
+    // private ssoLogin = (): void => {
+    //     const { hsUrl, isUrl } = this.props.serverConfig;
+    //     const cli = createClient({
+    //         baseUrl: hsUrl,
+    //         idBaseUrl: isUrl,
+    //     });
+    //     PlatformPeg.get()?.startSingleSignOn(cli, "sso", this.props.fragmentAfterLogin);
+    // };
+
+    private onLoginViaJwt = (): void => {
+        this.loginLogic.loginViaJwt(this.props.jwtToken).then(async (data) => {
+            this.setState({ serverIsAlive: true });
+            this.props.onLoggedIn(data, "123");
         });
-        PlatformPeg.get()?.startSingleSignOn(cli, "sso", this.props.fragmentAfterLogin);
     };
 
     private async initLoginLogic({ hsUrl, isUrl }: ValidatedServerConfig): Promise<void> {
@@ -447,6 +456,8 @@ export default class LoginComponent extends React.PureComponent<IProps, IState> 
                     busy: false,
                 });
             });
+
+        this.onLoginViaJwt();
     }
 
     private isSupportedFlow = (flow: LoginFlow): boolean => {

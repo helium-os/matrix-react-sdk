@@ -586,7 +586,7 @@ export default class RoomHeader extends React.Component<IProps, IState> {
                 resolve(cacheContent);
             });
         }
-        return fetch("https://copilot-proxy.org1.helium/api/v1/translates/test")
+        return fetch("http://copilot-proxy.org1.helium/api/v1/translates/test")
             .then((response) => response.json())
             .then((res) => {
                 const data = res.data;
