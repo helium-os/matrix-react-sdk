@@ -37,7 +37,7 @@ import * as Email from "../../../email";
 import { getDefaultIdentityServerUrl, setToDefaultIdentityServer } from "../../../utils/IdentityServerUtils";
 import { buildActivityScores, buildMemberScores, compareMembers } from "../../../utils/SortMembers";
 import { abbreviateUrl } from "../../../utils/UrlUtils";
-import IdentityAuthClient from "../../../IdentityAuthClient";
+// import IdentityAuthClient from "../../../IdentityAuthClient";
 import { humanizeTime } from "../../../utils/humanize";
 import { IInviteResult, inviteMultipleToRoom, showAnyInviteErrors } from "../../../RoomInvite";
 import { Action } from "../../../dispatcher/actions";
@@ -623,149 +623,178 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
     };
 
     private updateSuggestions = async (term: string): Promise<void> => {
-        MatrixClientPeg.get()
-            .searchUserDirectory({ term })
-            .then(async (r): Promise<void> => {
-                if (term !== this.state.filterText) {
-                    // Discard the results - we were probably too slow on the server-side to make
-                    // these results useful. This is a race we want to avoid because we could overwrite
-                    // more accurate results.
-                    return;
+        const results = [];
+        const mxUserId = localStorage.getItem("mx_user_id");
+        const serverName = mxUserId.split(":").splice(1).join();
+        fetch(`/heliumos-user-api/api/v1/users?name=${encodeURIComponent(term)}`)
+            .then((response) => response.json())
+            .then((res) => {
+                const data = res.data;
+                if (data.length) {
+                    for (let i = 0; i < data.length; i++) {
+                        const item = data[i];
+                        if (item.username) {
+                            const userId = `@${item.id}:${serverName}`;
+                            results.splice(0, 0, {
+                                user_id: userId,
+                                display_name: item.display_name || item.username,
+                                avatar_url: null,
+                            });
+                        }
+                    }
                 }
 
-                if (!r.results) r.results = [];
-
-                const mxUserId = localStorage.getItem("mx_user_id");
-                const serverName = mxUserId.split(":").splice(1).join();
-                fetch(`/heliumos-user-api/api/v1/users?name=${encodeURIComponent(term)}`)
-                    .then((response) => response.json())
-                    .then((res) => {
-                        const data = res.data;
-                        if (data.length) {
-                            for (let i = 0; i < data.length; i++) {
-                                const item = data[i];
-                                if (item.username) {
-                                    const userId = `@${item.id}:${serverName}`;
-                                    r.results.splice(0, 0, {
-                                        user_id: userId,
-                                        display_name: item.display_name || item.username,
-                                        avatar_url: null,
-                                    });
-                                }
-                            }
-                        }
-
-                        this.setState({
-                            serverResultsMixin: r.results.map((u) => ({
-                                userId: u.user_id,
-                                user: new DirectoryMember(u),
-                            })),
-                        });
-                    });
-
-                // While we're here, try and autocomplete a search result for the mxid itself
-                // if there's no matches (and the input looks like a mxid).
-                // if (term[0] === "@" && term.indexOf(":") > 1) {
-                //     try {
-                //         const profile = await MatrixClientPeg.get().getProfileInfo(term);
-                //         if (profile) {
-                //             // If we have a profile, we have enough information to assume that
-                //             // the mxid can be invited - add it to the list. We stick it at the
-                //             // top so it is most obviously presented to the user.
-                //             r.results.splice(0, 0, {
-                //                 user_id: term,
-                //                 display_name: profile["displayname"],
-                //                 avatar_url: profile["avatar_url"],
-                //             });
-                //         }
-                //     } catch (e) {
-                //         logger.warn("Non-fatal error trying to make an invite for a user ID");
-                //         logger.warn(e);
-
-                //         // Reuse logic from Permalinks as a basic MXID validity check
-                //         const serverName = getServerName(term);
-                //         const domain = getHostnameFromMatrixServerName(serverName);
-                //         if (domain) {
-                //             // Add a result anyways, just without a profile. We stick it at the
-                //             // top so it is most obviously presented to the user.
-                //             r.results.splice(0, 0, {
-                //                 user_id: term,
-                //                 display_name: term,
-                //             });
-                //         }
-                //     }
-                // }
-
-                // this.setState({
-                //     serverResultsMixin: r.results.map((u) => ({
-                //         userId: u.user_id,
-                //         user: new DirectoryMember(u),
-                //     })),
-                // });
-            })
-            .catch((e) => {
-                logger.error("Error searching user directory:");
-                logger.error(e);
-                this.setState({ serverResultsMixin: [] }); // clear results because it's moderately fatal
+                this.setState({
+                    serverResultsMixin: results.map((u) => ({
+                        userId: u.user_id,
+                        user: new DirectoryMember(u),
+                    })),
+                });
             });
+
+        // MatrixClientPeg.get()
+        //     .searchUserDirectory({ term })
+        //     .then(async (r): Promise<void> => {
+        //         if (term !== this.state.filterText) {
+        //             // Discard the results - we were probably too slow on the server-side to make
+        //             // these results useful. This is a race we want to avoid because we could overwrite
+        //             // more accurate results.
+        //             return;
+        //         }
+
+        //         if (!r.results) r.results = [];
+
+        //         const mxUserId = localStorage.getItem("mx_user_id");
+        //         const serverName = mxUserId.split(":").splice(1).join();
+        //         fetch(`/heliumos-user-api/api/v1/users?name=${encodeURIComponent(term)}`)
+        //             .then((response) => response.json())
+        //             .then((res) => {
+        //                 const data = res.data;
+        //                 if (data.length) {
+        //                     for (let i = 0; i < data.length; i++) {
+        //                         const item = data[i];
+        //                         if (item.username) {
+        //                             const userId = `@${item.id}:${serverName}`;
+        //                             r.results.splice(0, 0, {
+        //                                 user_id: userId,
+        //                                 display_name: item.display_name || item.username,
+        //                                 avatar_url: null,
+        //                             });
+        //                         }
+        //                     }
+        //                 }
+
+        //                 this.setState({
+        //                     serverResultsMixin: r.results.map((u) => ({
+        //                         userId: u.user_id,
+        //                         user: new DirectoryMember(u),
+        //                     })),
+        //                 });
+        //             });
+
+        //         // While we're here, try and autocomplete a search result for the mxid itself
+        //         // if there's no matches (and the input looks like a mxid).
+        //         // if (term[0] === "@" && term.indexOf(":") > 1) {
+        //         //     try {
+        //         //         const profile = await MatrixClientPeg.get().getProfileInfo(term);
+        //         //         if (profile) {
+        //         //             // If we have a profile, we have enough information to assume that
+        //         //             // the mxid can be invited - add it to the list. We stick it at the
+        //         //             // top so it is most obviously presented to the user.
+        //         //             r.results.splice(0, 0, {
+        //         //                 user_id: term,
+        //         //                 display_name: profile["displayname"],
+        //         //                 avatar_url: profile["avatar_url"],
+        //         //             });
+        //         //         }
+        //         //     } catch (e) {
+        //         //         logger.warn("Non-fatal error trying to make an invite for a user ID");
+        //         //         logger.warn(e);
+
+        //         //         // Reuse logic from Permalinks as a basic MXID validity check
+        //         //         const serverName = getServerName(term);
+        //         //         const domain = getHostnameFromMatrixServerName(serverName);
+        //         //         if (domain) {
+        //         //             // Add a result anyways, just without a profile. We stick it at the
+        //         //             // top so it is most obviously presented to the user.
+        //         //             r.results.splice(0, 0, {
+        //         //                 user_id: term,
+        //         //                 display_name: term,
+        //         //             });
+        //         //         }
+        //         //     }
+        //         // }
+
+        //         // this.setState({
+        //         //     serverResultsMixin: r.results.map((u) => ({
+        //         //         userId: u.user_id,
+        //         //         user: new DirectoryMember(u),
+        //         //     })),
+        //         // });
+        //     })
+        //     .catch((e) => {
+        //         logger.error("Error searching user directory:");
+        //         logger.error(e);
+        //         this.setState({ serverResultsMixin: [] }); // clear results because it's moderately fatal
+        //     });
 
         // Whenever we search the directory, also try to search the identity server. It's
         // all debounced the same anyways.
-        if (!this.state.canUseIdentityServer) {
-            // The user doesn't have an identity server set - warn them of that.
-            this.setState({ tryingIdentityServer: true });
-            return;
-        }
-        if (Email.looksValid(term) && this.canInviteThirdParty() && SettingsStore.getValue(UIFeature.IdentityServer)) {
-            // Start off by suggesting the plain email while we try and resolve it
-            // to a real account.
-            this.setState({
-                // per above: the userId is a lie here - it's just a regular identifier
-                threepidResultsMixin: [{ user: new ThreepidMember(term), userId: term }],
-            });
-            try {
-                const authClient = new IdentityAuthClient();
-                const token = await authClient.getAccessToken();
-                // No token → unable to try a lookup
-                if (!token) return;
+        // if (!this.state.canUseIdentityServer) {
+        //     // The user doesn't have an identity server set - warn them of that.
+        //     this.setState({ tryingIdentityServer: true });
+        //     return;
+        // }
+        // if (Email.looksValid(term) && this.canInviteThirdParty() && SettingsStore.getValue(UIFeature.IdentityServer)) {
+        //     // Start off by suggesting the plain email while we try and resolve it
+        //     // to a real account.
+        //     this.setState({
+        //         // per above: the userId is a lie here - it's just a regular identifier
+        //         threepidResultsMixin: [{ user: new ThreepidMember(term), userId: term }],
+        //     });
+        //     try {
+        //         const authClient = new IdentityAuthClient();
+        //         const token = await authClient.getAccessToken();
+        //         // No token → unable to try a lookup
+        //         if (!token) return;
 
-                if (term !== this.state.filterText) return; // abandon hope
+        //         if (term !== this.state.filterText) return; // abandon hope
 
-                const lookup = await MatrixClientPeg.get().lookupThreePid("email", term, token);
-                if (term !== this.state.filterText) return; // abandon hope
+        //         const lookup = await MatrixClientPeg.get().lookupThreePid("email", term, token);
+        //         if (term !== this.state.filterText) return; // abandon hope
 
-                if (!lookup || !lookup.mxid) {
-                    // We weren't able to find anyone - we're already suggesting the plain email
-                    // as an alternative, so do nothing.
-                    return;
-                }
+        //         if (!lookup || !lookup.mxid) {
+        //             // We weren't able to find anyone - we're already suggesting the plain email
+        //             // as an alternative, so do nothing.
+        //             return;
+        //         }
 
-                // We append the user suggestion to give the user an option to click
-                // the email anyways, and so we don't cause things to jump around. In
-                // theory, the user would see the user pop up and think "ah yes, that
-                // person!"
-                const profile = await MatrixClientPeg.get().getProfileInfo(lookup.mxid);
-                if (term !== this.state.filterText || !profile) return; // abandon hope
-                this.setState({
-                    threepidResultsMixin: [
-                        ...this.state.threepidResultsMixin,
-                        {
-                            user: new DirectoryMember({
-                                user_id: lookup.mxid,
-                                display_name: profile.displayname,
-                                avatar_url: profile.avatar_url,
-                            }),
-                            // Use the search term as identifier, so that it shows up in suggestions.
-                            userId: term,
-                        },
-                    ],
-                });
-            } catch (e) {
-                logger.error("Error searching identity server:");
-                logger.error(e);
-                this.setState({ threepidResultsMixin: [] }); // clear results because it's moderately fatal
-            }
-        }
+        //         // We append the user suggestion to give the user an option to click
+        //         // the email anyways, and so we don't cause things to jump around. In
+        //         // theory, the user would see the user pop up and think "ah yes, that
+        //         // person!"
+        //         const profile = await MatrixClientPeg.get().getProfileInfo(lookup.mxid);
+        //         if (term !== this.state.filterText || !profile) return; // abandon hope
+        //         this.setState({
+        //             threepidResultsMixin: [
+        //                 ...this.state.threepidResultsMixin,
+        //                 {
+        //                     user: new DirectoryMember({
+        //                         user_id: lookup.mxid,
+        //                         display_name: profile.displayname,
+        //                         avatar_url: profile.avatar_url,
+        //                     }),
+        //                     // Use the search term as identifier, so that it shows up in suggestions.
+        //                     userId: term,
+        //                 },
+        //             ],
+        //         });
+        //     } catch (e) {
+        //         logger.error("Error searching identity server:");
+        //         logger.error(e);
+        //         this.setState({ threepidResultsMixin: [] }); // clear results because it's moderately fatal
+        //     }
+        // }
     };
 
     private updateFilter = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -997,9 +1026,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         // Do some simple filtering on the input before going much further. If we get no results, say so.
         if (this.state.filterText) {
             const filterBy = this.state.filterText.toLowerCase();
-            sourceMembers = sourceMembers.filter(
-                (m) => m.user.name.toLowerCase().includes(filterBy) || m.userId.toLowerCase().includes(filterBy),
-            );
+            sourceMembers = sourceMembers.filter((m) => m.user.name.toLowerCase().includes(filterBy));
 
             if (sourceMembers.length === 0 && !hasAdditionalMembers) {
                 return (
@@ -1013,7 +1040,15 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
         // Now we mix in the additional members. Again, we presume these have already been filtered. We
         // also assume they are more relevant than our suggestions and prepend them to the list.
-        sourceMembers = [...priorityAdditionalMembers, ...sourceMembers, ...otherAdditionalMembers];
+        if (kind === "suggestions") {
+            if (this.state.filterText) {
+                sourceMembers = [...this.state.serverResultsMixin];
+            } else {
+                sourceMembers = [];
+            }
+        } else {
+            sourceMembers = [...priorityAdditionalMembers, ...sourceMembers, ...otherAdditionalMembers];
+        }
 
         // If we're going to hide one member behind 'show more', just use up the space of the button
         // with the member's tile instead.
@@ -1256,7 +1291,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     {
                         userId: () => {
                             return (
-                                <span>username</span>
+                                <span>用户名</span>
                                 // <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
                                 //     {userId}
                                 // </a>
@@ -1271,7 +1306,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     {
                         userId: () => {
                             return (
-                                <span>username</span>
+                                <span>用户名</span>
                                 // <a href={makeUserPermalink(userId)} rel="noreferrer noopener" target="_blank">
                                 //     {userId}
                                 // </a>
