@@ -1907,6 +1907,11 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
         this.showScreen("register");
     };
 
+    // 修改是否为通过token登录
+    private onChangeTokenLogin = (tokenLogin: boolean): void => {
+        this.tokenLogin = tokenLogin;
+    }
+
     private onLoginClick = (): void => {
         this.showScreen("login");
     };
@@ -2038,6 +2043,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 </div>
             );
         } else if (this.state.view === Views.E2E_SETUP) {
+            // 设置秘钥弹窗
             view = (
                 <E2eSetup
                     onFinished={this.onCompleteSecurityE2eSetupFinished}
@@ -2046,6 +2052,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 />
             );
         } else if (this.state.view === Views.LOGGED_IN) {
+            // 已登录
             // store errors stop the client syncing and require user intervention, so we'll
             // be showing a dialog. Don't show anything else.
             const isStoreError = this.state.syncError && this.state.syncError instanceof InvalidStoreError;
@@ -2130,6 +2137,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                     fragmentAfterLogin={fragmentAfterLogin}
                     defaultUsername={this.props.startingFragmentQueryParams.defaultUsername as string}
                     jwtToken={this.props.jwtToken}
+                    onChangeTokenLogin={this.onChangeTokenLogin}
                     {...this.getServerProperties()}
                 />
             );
