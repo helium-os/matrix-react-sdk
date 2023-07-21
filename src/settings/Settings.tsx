@@ -796,10 +796,11 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG,
         default: false,
     },
+    // 默认不共享匿名数据，不展示"帮助改进chat"弹层（默认为null时会展示）
     "pseudonymousAnalyticsOptIn": {
         supportedLevels: [SettingLevel.ACCOUNT],
         displayName: _td("Send analytics data"),
-        default: null,
+        default: false,
     },
     "deviceClientInformationOptIn": {
         supportedLevels: [SettingLevel.ACCOUNT],
