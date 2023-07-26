@@ -150,15 +150,46 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
         };
 
         MatrixClientPeg.get().on(CryptoEvent.KeyBackupStatus, this.onKeyBackupStatusChange);
+    }
 
-        this.getInitialPhase();
+    // 存储备份密钥
+    private onStoreRecoveryKey = (): Promise<{}> => {
+        const cli = MatrixClientPeg.get();
+        return cli.setAccountData('m.secret_storage.backup_key', {
+            key: this.recoveryKey.encodedPrivateKey
+        });
+    }
+
+    // 自动备份密钥
+    private automaticBackupKey = async(): Promise<void> => {
+        console.log('~~~~自动备份密钥');
+        await this.onChooseKeyPassphraseFormSubmit(); // 点击继续生成备份密钥
+        this.onDownloadClick();
+        await this.onStoreRecoveryKey(); // 将备份密钥保存到服务端
+        console.log('~~~~存储密钥成功', this.recoveryKey.encodedPrivateKey);
+        this.onShowKeyContinueClick(); // 点击继续来完成设置
+    }
+
+    public async componentDidMount(): Promise<void> {
+        try {
+            await this.getInitialPhase();
+        } catch(error) {
+        }
+        this.automaticBackupKey();
+    }
+
+    public componentDidUpdate(prevState): void {
+        // 验证成功后，自动触发完成操作，关闭弹窗
+        if (this.state.phase !== prevState.phase) {
+            this.onDoneClick();
+        }
     }
 
     public componentWillUnmount(): void {
         MatrixClientPeg.get().removeListener(CryptoEvent.KeyBackupStatus, this.onKeyBackupStatusChange);
     }
 
-    private getInitialPhase(): void {
+    private async getInitialPhase(): Promise<void> {
         const keyFromCustomisations = SecurityCustomisations.createSecretStorageKey?.();
         if (keyFromCustomisations) {
             logger.log("Created key via customisations, jumping to bootstrap step");
@@ -169,7 +200,7 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
             return;
         }
 
-        this.fetchBackupInfo();
+        await this.fetchBackupInfo();
     }
 
     private async fetchBackupInfo(): Promise<{ backupInfo?: IKeyBackupInfo; backupSigStatus?: TrustInfo }> {
@@ -232,8 +263,10 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
     };
 
     private onChooseKeyPassphraseFormSubmit = async (): Promise<void> => {
+        console.log('%%%onChooseKeyPassphraseFormSubmit', 'this.state.passPhraseKeySelected', this.state.passPhraseKeySelected, 'SecureBackupSetupMethod.Key', SecureBackupSetupMethod.Key);
         if (this.state.passPhraseKeySelected === SecureBackupSetupMethod.Key) {
             this.recoveryKey = await MatrixClientPeg.get().createRecoveryKeyFromPassphrase();
+            console.log('%%%this.recoveryKey', this.recoveryKey);
             this.setState({
                 copied: false,
                 downloaded: false,
@@ -420,6 +453,7 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
     };
 
     private onShowKeyContinueClick = (): void => {
+        console.log('~~~~继续设置');
         this.bootstrapSecretStorage();
     };
 
@@ -491,6 +525,13 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
             accountPassword: e.target.value,
         });
     };
+
+    private onDoneClick = (): void => {
+        if (this.state.phase === Phase.Stored) {
+            console.log('~~~~执行onDoneClick，触发完成操作，关闭弹窗');
+            this.props.onFinished(true);
+        }
+    }
 
     private renderOptionKey(): JSX.Element {
         return (
@@ -800,7 +841,7 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
                 <p className="mx_Dialog_content">{_t("Your keys are now being backed up from this device.")}</p>
                 <DialogButtons
                     primaryButton={_t("Done")}
-                    onPrimaryButtonClick={() => this.props.onFinished(true)}
+                    onPrimaryButtonClick={this.onDoneClick}
                     hasCancel={false}
                 />
             </>
@@ -951,18 +992,26 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
                 break;
         }
 
+
         return (
-            <BaseDialog
-                className={this.classNames}
-                onFinished={this.props.onFinished}
-                top={this.topComponent}
-                title={this.titleForPhase(this.state.phase)}
-                titleClass={titleClass}
-                hasCancel={this.props.hasCancel && [Phase.Passphrase].includes(this.state.phase)}
-                fixedWidth={false}
-            >
-                <div>{content}</div>
-            </BaseDialog>
+            <>
+                <div>
+                    <Spinner />
+                </div>
+                <div style={{display: 'none'}}>
+                    <BaseDialog
+                        className={this.classNames}
+                        onFinished={this.props.onFinished}
+                        top={this.topComponent}
+                        title={this.titleForPhase(this.state.phase)}
+                        titleClass={titleClass}
+                        hasCancel={this.props.hasCancel && [Phase.Passphrase].includes(this.state.phase)}
+                        fixedWidth={false}
+                    >
+                        <div>{content}</div>
+                    </BaseDialog>
+                </div>
+            </>
         );
     }
 }

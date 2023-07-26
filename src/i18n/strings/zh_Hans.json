@@ -835,7 +835,7 @@
     "Setting up keys": "设置密钥",
     "Verify this session": "验证此会话",
     "Encryption upgrade available": "提供加密升级",
-    "New login. Was this you?": "现在登录。请问是你本人吗？",
+    "New login. Was this you?": "新的登录。请问是你本人吗？",
     "Identity server has no terms of service": "身份服务器无服务条款",
     "This action requires accessing the default identity server <server /> to validate an email address or phone number, but the server does not have any terms of service.": "此操作需要访问默认的身份服务器 <server /> 以验证邮箱或电话号码，但此服务器无任何服务条款。",
     "Only continue if you trust the owner of the server.": "只有在你信任服务器所有者后才能继续。",

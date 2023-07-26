@@ -23,19 +23,19 @@ import { IKeyBackupInfo } from "matrix-js-sdk/src/crypto/keybackup";
 
 import { MatrixClientPeg } from "./MatrixClientPeg";
 import dis from "./dispatcher/dispatcher";
-import {
-    hideToast as hideBulkUnverifiedSessionsToast,
-    showToast as showBulkUnverifiedSessionsToast,
-} from "./toasts/BulkUnverifiedSessionsToast";
+// import {
+//     hideToast as hideBulkUnverifiedSessionsToast,
+//     showToast as showBulkUnverifiedSessionsToast,
+// } from "./toasts/BulkUnverifiedSessionsToast";
 import {
     hideToast as hideSetupEncryptionToast,
     Kind as SetupKind,
     showToast as showSetupEncryptionToast,
 } from "./toasts/SetupEncryptionToast";
-import {
-    hideToast as hideUnverifiedSessionsToast,
-    showToast as showUnverifiedSessionsToast,
-} from "./toasts/UnverifiedSessionToast";
+// import {
+//     hideToast as hideUnverifiedSessionsToast,
+//     showToast as showUnverifiedSessionsToast,
+// } from "./toasts/UnverifiedSessionToast";
 import { accessSecretStorage, isSecretStorageBeingAccessed } from "./SecurityManager";
 import { isSecureBackupRequired } from "./utils/WellKnownUtils";
 import { ActionPayload } from "./dispatcher/payloads";
@@ -46,7 +46,7 @@ import PlatformPeg from "./PlatformPeg";
 import { recordClientInformation, removeClientInformation } from "./utils/device/clientInformation";
 import SettingsStore, { CallbackFn } from "./settings/SettingsStore";
 import { UIFeature } from "./settings/UIFeature";
-import { isBulkUnverifiedDeviceReminderSnoozed } from "./utils/device/snoozeBulkUnverifiedDeviceReminder";
+// import { isBulkUnverifiedDeviceReminderSnoozed } from "./utils/device/snoozeBulkUnverifiedDeviceReminder";
 
 const KEY_BACKUP_POLL_INTERVAL = 5 * 60 * 1000;
 
@@ -319,7 +319,9 @@ export default class DeviceListener {
                 if (device.deviceId === cli.deviceId) continue;
 
                 const deviceTrust = await cli.checkDeviceTrust(cli.getUserId()!, device.deviceId!);
+                // 用户没有取消验证，并且当前还没有通过交叉签名验证的设备
                 if (!deviceTrust.isCrossSigningVerified() && !this.dismissed.has(device.deviceId)) {
+                    // ourDeviceIdsAtStart - 初始idb里存储的devices信息
                     if (this.ourDeviceIdsAtStart?.has(device.deviceId)) {
                         oldUnverifiedDeviceIds.add(device.deviceId);
                     } else {
@@ -333,33 +335,35 @@ export default class DeviceListener {
         logger.debug("New unverified sessions: " + Array.from(newUnverifiedDeviceIds).join(","));
         logger.debug("Currently showing toasts for: " + Array.from(this.displayingToastsForDeviceIds).join(","));
 
-        const isBulkUnverifiedSessionsReminderSnoozed = isBulkUnverifiedDeviceReminderSnoozed();
+        // 不展示"你有未验证的会话"弹窗，默认在LoggedInView组件加载后会进行验证
+        // const isBulkUnverifiedSessionsReminderSnoozed = isBulkUnverifiedDeviceReminderSnoozed();
 
-        // Display or hide the batch toast for old unverified sessions
-        // don't show the toast if the current device is unverified
-        if (
-            oldUnverifiedDeviceIds.size > 0 &&
-            isCurrentDeviceTrusted &&
-            this.enableBulkUnverifiedSessionsReminder &&
-            !isBulkUnverifiedSessionsReminderSnoozed
-        ) {
-            showBulkUnverifiedSessionsToast(oldUnverifiedDeviceIds);
-        } else {
-            hideBulkUnverifiedSessionsToast();
-        }
+        // // Display or hide the batch toast for old unverified sessions
+        // // don't show the toast if the current device is unverified
+        // if (
+        //     oldUnverifiedDeviceIds.size > 0 &&
+        //     isCurrentDeviceTrusted &&
+        //     this.enableBulkUnverifiedSessionsReminder &&
+        //     !isBulkUnverifiedSessionsReminderSnoozed
+        // ) {
+        //     showBulkUnverifiedSessionsToast(oldUnverifiedDeviceIds);
+        // } else {
+        //     hideBulkUnverifiedSessionsToast();
+        // }
 
-        // Show toasts for new unverified devices if they aren't already there
-        for (const deviceId of newUnverifiedDeviceIds) {
-            showUnverifiedSessionsToast(deviceId);
-        }
-
-        // ...and hide any we don't need any more
-        for (const deviceId of this.displayingToastsForDeviceIds) {
-            if (!newUnverifiedDeviceIds.has(deviceId)) {
-                logger.debug("Hiding unverified session toast for " + deviceId);
-                hideUnverifiedSessionsToast(deviceId);
-            }
-        }
+        // 不展示"新登录，确认是本人吗？"弹窗，默认在LoggedInView组件加载后会进行验证
+        // // Show toasts for new unverified devices if they aren't already there
+        // for (const deviceId of newUnverifiedDeviceIds) {
+        //     showUnverifiedSessionsToast(deviceId);
+        // }
+        //
+        // // ...and hide any we don't need any more
+        // for (const deviceId of this.displayingToastsForDeviceIds) {
+        //     if (!newUnverifiedDeviceIds.has(deviceId)) {
+        //         logger.debug("Hiding unverified session toast for " + deviceId);
+        //         hideUnverifiedSessionsToast(deviceId);
+        //     }
+        // }
 
         this.displayingToastsForDeviceIds = newUnverifiedDeviceIds;
     }

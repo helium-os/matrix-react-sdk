@@ -29,7 +29,7 @@ import PageTypes from "../../PageTypes";
 import MediaDeviceHandler from "../../MediaDeviceHandler";
 import { fixupColorFonts } from "../../utils/FontManager";
 import dis from "../../dispatcher/dispatcher";
-import { IMatrixClientCreds } from "../../MatrixClientPeg";
+import {IMatrixClientCreds, MatrixClientPeg} from "../../MatrixClientPeg";
 import SettingsStore from "../../settings/SettingsStore";
 import { SettingLevel } from "../../settings/SettingLevel";
 import ResizeHandle from "../views/elements/ResizeHandle";
@@ -71,6 +71,8 @@ import LeftPanelLiveShareWarning from "../views/beacon/LeftPanelLiveShareWarning
 import { UserOnboardingPage } from "../views/user-onboarding/UserOnboardingPage";
 import { PipContainer } from "./PipContainer";
 import { monitorSyncedPushRules } from "../../utils/pushRules/monitorSyncedPushRules";
+import {accessSecretStorage} from "../../SecurityManager";
+import SetupEncryptionDialog from "../views/dialogs/security/SetupEncryptionDialog";
 
 // We need to fetch each pinned message individually (if we don't already have it)
 // so each pinned message may trigger a request. Limit the number per room for sanity.
@@ -159,6 +161,42 @@ class LoggedInView extends React.Component<IProps, IState> {
         this.resizeHandler = React.createRef();
     }
 
+    // 验证设备
+    private onVerifyDevice = async (): Promise<void> => {
+        const cli = MatrixClientPeg.get();
+        const homeserverSupportsCrossSigning = await cli.doesServerSupportUnstableFeature(
+            "org.matrix.e2e_cross_signing",
+        );
+
+        const crossSigning = cli.crypto!.crossSigningInfo;
+        const secretStorage = cli.crypto!.secretStorage;
+        const crossSigningPrivateKeysInStorage = Boolean(await crossSigning.isStoredInSecretStorage(secretStorage));
+        const crossSigningReady = await cli.isCrossSigningReady();
+
+        if (homeserverSupportsCrossSigning === undefined) {
+            // loading
+            console.log('%%%loading');
+        } else if (!homeserverSupportsCrossSigning) {
+            // 主服务器不支持交叉签名
+            console.log('%%%主服务器不支持交叉签名');
+        } else if (crossSigningReady && crossSigningPrivateKeysInStorage) {
+            // ✅ 交叉签名已可用
+            console.log('%%%交叉签名已可用');
+        } else if (crossSigningReady && !crossSigningPrivateKeysInStorage) {
+            // ⚠️ 交叉签名已就绪，但尚未备份密钥，则设置备份密钥
+            console.log('%%%交叉签名已就绪，但尚未备份密钥，设置备份密钥');
+            accessSecretStorage();
+        } else if (crossSigningPrivateKeysInStorage) {
+            // 账户在秘密存储中有交叉签名身份，但并没有被此会话信任，则信任此会话
+            console.log('%%%账户在秘密存储中有交叉签名身份，但并没有被此会话信任，信任此会话');
+            Modal.createDialog(SetupEncryptionDialog, {}, undefined, /* priority = */ false, /* static = */ true);
+        } else {
+            // 未设置交叉签名，则设置备份密钥
+            console.log('%%%未设置交叉签名，设置备份密钥');
+            accessSecretStorage();
+        }
+    };
+
     public componentDidMount(): void {
         document.addEventListener("keydown", this.onNativeKeyDown, false);
         LegacyCallHandler.instance.addListener(LegacyCallHandlerEvent.CallState, this.onCallState);
@@ -191,6 +229,7 @@ class LoggedInView extends React.Component<IProps, IState> {
         OwnProfileStore.instance.on(UPDATE_EVENT, this.refreshBackgroundImage);
         this.loadResizerPreferences();
         this.refreshBackgroundImage();
+        this.onVerifyDevice();
     }
 
     public componentWillUnmount(): void {

@@ -75,10 +75,34 @@ export default class SetupEncryptionBody extends React.Component<IProps, IState>
         });
     };
 
+    public componentDidMount(): void {
+        this.automaticSelectPassphrase();
+    }
+
+    public componentDidUpdate(prevProps, prevState): void {
+        // 自动选择使用安全密钥进行验证
+        if (this.state.phase !== prevState.phase || this.state.lostKeys !== prevState.lostKeys) {
+            this.automaticSelectPassphrase();
+        }
+        // 验证成功后，自动触发完成操作，关闭弹窗
+        if (this.state.phase !== prevState.phase && this.state.phase === Phase.Done) {
+            console.log('~~~~执行onDoneClick，触发完成操作，关闭弹窗');
+            this.onDoneClick();
+        }
+    }
+
     public componentWillUnmount(): void {
         const store = SetupEncryptionStore.sharedInstance();
         store.off("update", this.onStoreUpdate);
         store.stop();
+    }
+
+    // 自动选择使用安全密钥进行验证
+    private automaticSelectPassphrase = (): void => {
+        if (this.state.phase === Phase.Intro && !this.state.lostKeys) {
+            console.log('~~~~自动选择使用安全密钥进行验证');
+            this.onUsePassphraseClick();
+        }
     }
 
     private onUsePassphraseClick = async (): Promise<void> => {

@@ -20,6 +20,7 @@ import SetupEncryptionBody from "../../../structures/auth/SetupEncryptionBody";
 import BaseDialog from "../BaseDialog";
 import { _t } from "../../../../languageHandler";
 import { SetupEncryptionStore, Phase } from "../../../../stores/SetupEncryptionStore";
+import Spinner from "../../elements/Spinner";
 
 function iconFromPhase(phase: Phase): string {
     if (phase === Phase.Done) {
@@ -60,13 +61,20 @@ export default class SetupEncryptionDialog extends React.Component<IProps, IStat
 
     public render(): React.ReactNode {
         return (
-            <BaseDialog
-                headerImage={this.state.icon}
-                onFinished={this.props.onFinished}
-                title={_t("Verify this session")}
-            >
-                <SetupEncryptionBody onFinished={this.props.onFinished} />
-            </BaseDialog>
+            <>
+                <div>
+                    <Spinner />
+                </div>
+                <div style={{ display: 'none'}}>
+                    <BaseDialog
+                        headerImage={this.state.icon}
+                        onFinished={this.props.onFinished}
+                        title={_t("Verify this session")}
+                    >
+                        <SetupEncryptionBody onFinished={this.props.onFinished} />
+                    </BaseDialog>
+                </div>
+            </>
         );
     }
 }

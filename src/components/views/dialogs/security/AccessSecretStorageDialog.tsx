@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 import { debounce } from "lodash";
 import classNames from "classnames";
 import React, { ChangeEvent, FormEvent } from "react";
@@ -30,6 +29,7 @@ import InteractiveAuthDialog from "../InteractiveAuthDialog";
 import DialogButtons from "../../elements/DialogButtons";
 import BaseDialog from "../BaseDialog";
 import { chromeFileInputFix } from "../../../../utils/BrowserWorkarounds";
+import Spinner from "../../elements/Spinner";
 
 // Maximum acceptable size of a key file. It's 59 characters including the spaces we encode,
 // so this should be plenty and allow for people putting extra whitespace in the file because
@@ -80,6 +80,31 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
         };
     }
 
+
+    public componentDidMount(): void {
+        this.automaticVerifyDevice();
+    }
+
+    // 获取服务端存储的备份密钥
+    private getRecoveryKey = (): string => {
+        const cli = MatrixClientPeg.get();
+        return cli.getAccountData('m.secret_storage.backup_key')?.getContent?.()?.key;
+    }
+
+    // 自动验证设备
+    private automaticVerifyDevice = (): void => {
+        const hasPassphrase = this.props.keyInfo?.passphrase?.salt && this.props.keyInfo?.passphrase?.iterations;
+        if (!this.state.resetting && !(hasPassphrase && !this.state.forceRecoveryKey)) {
+            console.log('~~~~自动输入安全密钥，完成设备验证');
+            const recoveryKey = this.getRecoveryKey();
+            console.log('~~~~获取到recoveryKey', recoveryKey);
+            this.changeRecoveryKey(recoveryKey);
+            setTimeout(() => {
+                this.onCheckPrivateKey();
+            }, VALIDATION_THROTTLE_MS + 100);
+        }
+    }
+
     private onCancel = (): void => {
         if (this.state.resetting) {
             this.setState({ resetting: false });
@@ -98,6 +123,7 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
     }, VALIDATION_THROTTLE_MS);
 
     private async validateRecoveryKey(): Promise<void> {
+        console.log('%%%validateRecoveryKey', 'this.state.recoveryKey', this.state.recoveryKey);
         if (this.state.recoveryKey === "") {
             this.setState({
                 recoveryKeyValid: null,
@@ -109,12 +135,15 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
         try {
             const cli = MatrixClientPeg.get();
             const decodedKey = cli.keyBackupKeyFromRecoveryKey(this.state.recoveryKey);
+            console.log('decodedKey', decodedKey, 'this.props.keyInfo', this.props.keyInfo);
             const correct = await cli.checkSecretStorageKey(decodedKey, this.props.keyInfo);
+            console.log('%%%recoveryKey验证完成', correct);
             this.setState({
                 recoveryKeyValid: true,
                 recoveryKeyCorrect: correct,
             });
         } catch (e) {
+            console.log('%%%recoveryKey验证失败', e);
             this.setState({
                 recoveryKeyValid: false,
                 recoveryKeyCorrect: false,
@@ -123,8 +152,13 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
     }
 
     private onRecoveryKeyChange = (ev: ChangeEvent<HTMLInputElement>): void => {
+        this.changeRecoveryKey(ev.target.value);
+    };
+
+    private changeRecoveryKey = (recoveryKey: string): void => {
+        console.log('%%%changeRecoveryKey', 'recoveryKey', recoveryKey);
         this.setState({
-            recoveryKey: ev.target.value,
+            recoveryKey,
             recoveryKeyFileError: null,
         });
 
@@ -137,7 +171,7 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
         // as well as the text box. Ideally we would refactor Field's validation logic so we could
         // re-use some of it.
         this.validateRecoveryKeyOnChange();
-    };
+    }
 
     private onRecoveryKeyFileChange = async (ev: ChangeEvent<HTMLInputElement>): Promise<void> => {
         if (!ev.target.files?.length) return;
@@ -195,9 +229,13 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
         }
     };
 
-    private onRecoveryKeyNext = async (ev: FormEvent<HTMLFormElement> | React.MouseEvent): Promise<void> => {
+    private onRecoveryKeyNext = (ev: FormEvent<HTMLFormElement> | React.MouseEvent): void => {
         ev.preventDefault();
+        this.onCheckPrivateKey();
+    };
 
+    private onCheckPrivateKey = async(): Promise<void> => {
+        console.log('%%%onCheckPrivateKey', 'this.state.recoveryKeyValid', this.state.recoveryKeyValid, 'this.state.recoveryKey', this.state.recoveryKey);
         if (!this.state.recoveryKeyValid) return;
 
         this.setState({ keyMatches: null });
@@ -208,7 +246,7 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
         } else {
             this.setState({ keyMatches });
         }
-    };
+    }
 
     private onPassPhraseChange = (ev: ChangeEvent<HTMLInputElement>): void => {
         this.setState({
@@ -450,14 +488,21 @@ export default class AccessSecretStorageDialog extends React.PureComponent<IProp
         }
 
         return (
-            <BaseDialog
-                className="mx_AccessSecretStorageDialog"
-                onFinished={this.props.onFinished}
-                title={title}
-                titleClass={titleClass}
-            >
-                <div>{content}</div>
-            </BaseDialog>
+            <>
+                <div>
+                    <Spinner />
+                </div>
+                <div style={{ display: 'none'}}>
+                    <BaseDialog
+                        className="mx_AccessSecretStorageDialog"
+                        onFinished={this.props.onFinished}
+                        title={title}
+                        titleClass={titleClass}
+                    >
+                        <div>{content}</div>
+                    </BaseDialog>
+                </div>
+            </>
         );
     }
 }
