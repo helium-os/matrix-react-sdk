@@ -77,6 +77,7 @@ export default class DevicesPanel extends React.Component<IProps, IState> {
                 }
 
                 this.setState((state, props) => {
+                    resp.devices = resp.devices.filter(item => !!item.display_name); // 过滤掉没有名称的设备（用于过滤换取chat token的服务器设备）
                     const deviceIds = resp.devices.map((device) => device.device_id);
                     const selectedDevices = state.selectedDevices.filter((deviceId) => deviceIds.includes(deviceId));
                     return {

@@ -82,6 +82,8 @@ interface IState {
     invitedRoomIds: Set<string>;
     showLoginWithQR: Mode | null;
     versions?: IServerVersions;
+    showSecureBackupPanel: boolean;
+    showCrossSigningPanel: boolean;
 }
 
 export default class SecurityUserSettingsTab extends React.Component<IProps, IState> {
@@ -93,12 +95,17 @@ export default class SecurityUserSettingsTab extends React.Component<IProps, ISt
         // Get rooms we're invited to
         const invitedRoomIds = new Set(this.getInvitedRooms().map((room) => room.roomId));
 
+
+
+
         this.state = {
             ignoredUserIds: MatrixClientPeg.get().getIgnoredUsers(),
             waitingUnignored: [],
             managingInvites: false,
             invitedRoomIds,
             showLoginWithQR: null,
+            showSecureBackupPanel: SettingsStore.getValue(UIFeature.SecureBackupPanel),
+            showCrossSigningPanel: SettingsStore.getValue(UIFeature.CrossSigningPanel)
         };
     }
 
@@ -411,15 +418,17 @@ export default class SecurityUserSettingsTab extends React.Component<IProps, ISt
             );
         }
 
+
+        const { showSecureBackupPanel, showCrossSigningPanel } = this.state;
         return (
             <div className="mx_SettingsTab mx_SecurityUserSettingsTab">
                 {warning}
                 {devicesSection}
                 <div className="mx_SettingsTab_heading">{_t("Encryption")}</div>
                 <div className="mx_SettingsTab_section">
-                    {secureBackup}
+                    {showSecureBackupPanel && secureBackup}
                     {eventIndex}
-                    {crossSigning}
+                    {showCrossSigningPanel && crossSigning}
                     <CryptographyPanel />
                 </div>
                 {privacySection}

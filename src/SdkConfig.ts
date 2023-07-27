@@ -51,6 +51,7 @@ export const DEFAULTS: IConfigOptions = {
         max_length: 4 * 60 * 60, // four hours
     },
     disable_guests: true,
+    show_labs_settings: false
 };
 
 export default class SdkConfig {

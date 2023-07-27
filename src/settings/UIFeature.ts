@@ -32,6 +32,8 @@ export enum UIFeature {
     RoomHistorySettings = "UIFeature.roomHistorySettings",
     TimelineEnableRelativeDates = "UIFeature.timelineEnableRelativeDates",
     BulkUnverifiedSessionsReminder = "UIFeature.BulkUnverifiedSessionsReminder",
+    SecureBackupPanel = "UIFeature.SecureBackupPanel",
+    CrossSigningPanel = "UIFeature.CrossSigningPanel",
 }
 
 export enum UIComponent {

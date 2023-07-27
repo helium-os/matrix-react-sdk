@@ -174,8 +174,8 @@ export default class UserSettingsDialog extends React.Component<IProps, IState> 
         }
         // Show the Labs tab if enabled or if there are any active betas
         if (
-            SdkConfig.get("show_labs_settings") ||
-            SettingsStore.getFeatureSettingNames().some((k) => SettingsStore.getBetaInfo(k))
+            SdkConfig.get("show_labs_settings")
+            // || SettingsStore.getFeatureSettingNames().some((k) => SettingsStore.getBetaInfo(k))
         ) {
             tabs.push(
                 new Tab(

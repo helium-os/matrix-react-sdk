@@ -1140,6 +1140,16 @@ export const SETTINGS: { [setting: string]: ISetting } = {
         supportedLevels: LEVELS_UI_FEATURE,
         default: true,
     },
+    // 是否展示隐私安全中的安全备份面板
+    [UIFeature.SecureBackupPanel]: {
+        supportedLevels: LEVELS_UI_FEATURE,
+        default: false,
+    },
+    // 是否展示隐私安全中的交叉签名面板
+    [UIFeature.CrossSigningPanel]: {
+        supportedLevels: LEVELS_UI_FEATURE,
+        default: false,
+    },
 
     // Electron-specific settings, they are stored by Electron and set/read over an IPC.
     // We store them over there are they are necessary to know before the renderer process launches.
