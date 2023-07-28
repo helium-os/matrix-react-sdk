@@ -152,21 +152,14 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
         MatrixClientPeg.get().on(CryptoEvent.KeyBackupStatus, this.onKeyBackupStatusChange);
     }
 
-    // 存储备份密钥
-    private onStoreRecoveryKey = (): Promise<{}> => {
-        const cli = MatrixClientPeg.get();
-        return cli.setAccountData('m.secret_storage.backup_key', {
-            key: this.recoveryKey.encodedPrivateKey
-        });
-    }
-
     // 自动备份密钥
     private automaticBackupKey = async(): Promise<void> => {
         console.log('~~~~自动备份密钥');
         await this.onChooseKeyPassphraseFormSubmit(); // 点击继续生成备份密钥
-        this.onDownloadClick();
-        await this.onStoreRecoveryKey(); // 将备份密钥保存到服务端
-        console.log('~~~~存储密钥成功', this.recoveryKey.encodedPrivateKey);
+        this.onDownloadClick(); // TODO  验证测试环境idb里backup_key存储没问题后，需要删掉
+        const key = this.recoveryKey.encodedPrivateKey;
+        await storeRecoveryKey(key); // 将备份密钥保存到服务端
+        console.log('~~~~存储密钥成功', key);
         this.onShowKeyContinueClick(); // 点击继续来完成设置
     }
 
@@ -263,10 +256,10 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
     };
 
     private onChooseKeyPassphraseFormSubmit = async (): Promise<void> => {
-        console.log('%%%onChooseKeyPassphraseFormSubmit', 'this.state.passPhraseKeySelected', this.state.passPhraseKeySelected, 'SecureBackupSetupMethod.Key', SecureBackupSetupMethod.Key);
+        console.log('~~~onChooseKeyPassphraseFormSubmit', 'this.state.passPhraseKeySelected', this.state.passPhraseKeySelected, 'SecureBackupSetupMethod.Key', SecureBackupSetupMethod.Key);
         if (this.state.passPhraseKeySelected === SecureBackupSetupMethod.Key) {
             this.recoveryKey = await MatrixClientPeg.get().createRecoveryKeyFromPassphrase();
-            console.log('%%%this.recoveryKey', this.recoveryKey);
+            console.log('~~~this.recoveryKey', this.recoveryKey);
             this.setState({
                 copied: false,
                 downloaded: false,

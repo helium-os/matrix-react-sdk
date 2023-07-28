@@ -105,6 +105,7 @@ interface IProps {
     justRegistered?: boolean;
     roomJustCreatedOpts?: IOpts;
     forceTimeline?: boolean; // see props on MatrixChat
+    idbReady: boolean;
 }
 
 interface IState {
@@ -163,11 +164,13 @@ class LoggedInView extends React.Component<IProps, IState> {
 
     // 验证设备
     private onVerifyDevice = async (): Promise<void> => {
+        console.log('~~~~~enter onVerifyDevice');
+        if (!this.props.idbReady) { return; }
+        console.log('~~~~~onVerifyDevice start');
         const cli = MatrixClientPeg.get();
         const homeserverSupportsCrossSigning = await cli.doesServerSupportUnstableFeature(
             "org.matrix.e2e_cross_signing",
         );
-
         const crossSigning = cli.crypto!.crossSigningInfo;
         const secretStorage = cli.crypto!.secretStorage;
         const crossSigningPrivateKeysInStorage = Boolean(await crossSigning.isStoredInSecretStorage(secretStorage));
@@ -175,24 +178,24 @@ class LoggedInView extends React.Component<IProps, IState> {
 
         if (homeserverSupportsCrossSigning === undefined) {
             // loading
-            console.log('%%%loading');
+            console.log('~~~ loading');
         } else if (!homeserverSupportsCrossSigning) {
             // 主服务器不支持交叉签名
-            console.log('%%%主服务器不支持交叉签名');
+            console.log('~~~ 主服务器不支持交叉签名');
         } else if (crossSigningReady && crossSigningPrivateKeysInStorage) {
             // ✅ 交叉签名已可用
-            console.log('%%%交叉签名已可用');
+            console.log('~~~ 交叉签名已可用');
         } else if (crossSigningReady && !crossSigningPrivateKeysInStorage) {
             // ⚠️ 交叉签名已就绪，但尚未备份密钥，则设置备份密钥
-            console.log('%%%交叉签名已就绪，但尚未备份密钥，设置备份密钥');
+            console.log('~~~ 交叉签名已就绪，但尚未备份密钥，设置备份密钥');
             accessSecretStorage();
         } else if (crossSigningPrivateKeysInStorage) {
             // 账户在秘密存储中有交叉签名身份，但并没有被此会话信任，则信任此会话
-            console.log('%%%账户在秘密存储中有交叉签名身份，但并没有被此会话信任，信任此会话');
+            console.log('~~~ 账户在秘密存储中有交叉签名身份，但并没有被此会话信任，信任此会话');
             Modal.createDialog(SetupEncryptionDialog, {}, undefined, /* priority = */ false, /* static = */ true);
         } else {
             // 未设置交叉签名，则设置备份密钥
-            console.log('%%%未设置交叉签名，设置备份密钥');
+            console.log('~~~ 未设置交叉签名，设置备份密钥');
             accessSecretStorage();
         }
     };
@@ -230,6 +233,12 @@ class LoggedInView extends React.Component<IProps, IState> {
         this.loadResizerPreferences();
         this.refreshBackgroundImage();
         this.onVerifyDevice();
+    }
+
+    public componentDidUpdate(prevProps, prevState): void {
+        if (this.props.idbReady !== prevProps.idbReady) {
+            this.onVerifyDevice();
+        }
     }
 
     public componentWillUnmount(): void {

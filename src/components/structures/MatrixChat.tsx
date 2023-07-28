@@ -207,6 +207,7 @@ interface IState {
     resizeNotifier: ResizeNotifier;
     serverConfig?: ValidatedServerConfig;
     ready: boolean;
+    idbReady: boolean;
     threepidInvite?: IThreepidInvite;
     roomOobData?: object;
     pendingInitialSync?: boolean;
@@ -257,6 +258,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
             syncError: null, // If the current syncing status is ERROR, the error object, otherwise null.
             resizeNotifier: new ResizeNotifier(),
             ready: false,
+            idbReady: false,
         };
 
         this.loggedInView = createRef();
@@ -1493,6 +1495,12 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
         });
 
         cli.on(ClientEvent.Sync, (state: SyncState, prevState: SyncState | null, data?: ISyncStateData) => {
+            console.log('订阅到ClientEvent.Sync事件', state, data);
+            if (!this.state.idbReady) {
+                this.setState({
+                    idbReady: state === SyncState.Prepared && !data?.fromCache
+                });
+            }
             if (state === SyncState.Error || state === SyncState.Reconnecting) {
                 if (data?.error instanceof InvalidStoreError) {
                     Lifecycle.handleInvalidStoreError(data.error);
