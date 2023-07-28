@@ -162,7 +162,12 @@ class LoggedInView extends React.Component<IProps, IState> {
         this.resizeHandler = React.createRef();
     }
 
-    // 验证设备
+    /**
+     * 验证设备
+     *
+     * 必须等idbReady后才可以执行onVerifyDevice方法，否则判断会出问题
+     * 会出现设备首次设置备份密钥后刷新页面，因为判断的时候idb数据没有加载完成，导致crossSigningPrivateKeysInStorage判断为false，会再次设置备份密钥
+     */
     private onVerifyDevice = async (): Promise<void> => {
         console.log('~~~~~enter onVerifyDevice');
         if (!this.props.idbReady) { return; }
