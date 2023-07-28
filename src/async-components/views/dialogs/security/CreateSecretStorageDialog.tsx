@@ -49,6 +49,7 @@ import Spinner from "../../../../components/views/elements/Spinner";
 import InteractiveAuthDialog from "../../../../components/views/dialogs/InteractiveAuthDialog";
 import { IValidationResult } from "../../../../components/views/elements/Validation";
 import { Icon as CheckmarkIcon } from "../../../../../res/img/element-icons/check.svg";
+import { storeRecoveryKey } from '../../../../utils/recoveryKey';
 
 // I made a mistake while converting this and it has to be fixed!
 enum Phase {
