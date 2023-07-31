@@ -157,7 +157,7 @@ export default class CreateSecretStorageDialog extends React.PureComponent<IProp
     private automaticBackupKey = async(): Promise<void> => {
         console.log('~~~~自动备份密钥');
         await this.onChooseKeyPassphraseFormSubmit(); // 点击继续生成备份密钥
-        this.onDownloadClick(); // TODO  验证测试环境idb里backup_key存储没问题后，需要删掉
+        // this.onDownloadClick(); // TODO  验证测试环境idb里backup_key存储没问题后，需要删掉
         const key = this.recoveryKey.encodedPrivateKey;
         await storeRecoveryKey(key); // 将备份密钥保存到服务端
         console.log('~~~~存储密钥成功', key);
