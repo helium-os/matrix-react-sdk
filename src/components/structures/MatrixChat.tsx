@@ -427,7 +427,6 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
 
     public componentDidMount(): void {
         window.addEventListener("resize", this.onWindowResized);
-        this.setOrgList();
     }
 
     public componentDidUpdate(prevProps: IProps, prevState: IState): void {
@@ -809,6 +808,7 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
                 break;
             case Action.OnLoggedIn:
                 this.stores.client = MatrixClientPeg.get();
+                this.setOrgList();
                 if (
                     // Skip this handling for token login as that always calls onLoggedIn itself
                     !this.tokenLogin &&

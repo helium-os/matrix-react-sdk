@@ -23,6 +23,7 @@ export interface OrgItem {
 }
 export interface IOrg {
     orgList: OrgItem[];
+    currentOrgId: string;
 }
 
 export default class OrgStore {

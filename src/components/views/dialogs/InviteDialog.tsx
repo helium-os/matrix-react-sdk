@@ -81,8 +81,6 @@ import {AddressType, getAddressType} from "../../../UserAddress";
 // we have a number of types defined from the Matrix spec which can't reasonably be altered here.
 /* eslint-disable camelcase */
 
-const orgStore = OrgStore.sharedInstance();
-
 interface Result {
     userId: string;
     user: Member;
@@ -491,7 +489,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
     // 获取当前用户所在组织id
     private getOrgId(): string {
-        return orgStore.getCurrentOrgId();
+        return OrgStore.sharedInstance().getCurrentOrgId();
     }
 
     // 生成搜索用户信息
@@ -518,9 +516,9 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
         // 补齐信息
         if (userOrgName && !userOrgId) {
-            userOrgId = orgStore.getOrgIdByName(userOrgName);
+            userOrgId = OrgStore.sharedInstance().getOrgIdByName(userOrgName);
         } else if (userOrgId && !userOrgName) {
-            userOrgName = orgStore.getOrgNameById(userOrgId);
+            userOrgName = OrgStore.sharedInstance().getOrgNameById(userOrgId);
         }
         console.log('generateSearchUser  result', {
             userId,
