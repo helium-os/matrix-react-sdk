@@ -130,6 +130,7 @@ import { IRoomStateEventsActionPayload } from "../../actions/MatrixActionCreator
 import { ShowThreadPayload } from "../../dispatcher/payloads/ShowThreadPayload";
 import { RightPanelPhases } from "../../stores/right-panel/RightPanelStorePhases";
 import RightPanelStore from "../../stores/right-panel/RightPanelStore";
+import OrgStore from "../../stores/OrgStore";
 import { TimelineRenderingType } from "../../contexts/RoomContext";
 import { UseCaseSelection } from "../views/elements/UseCaseSelection";
 import { ValidatedServerConfig } from "../../utils/ValidatedServerConfig";
@@ -418,8 +419,15 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
         super.setState<K>(state, callback);
     }
 
+    private async setOrgList(): Promise<void> {
+        const orgStore = OrgStore.sharedInstance();
+        const orgList = await orgStore.queryOrgList();
+        orgStore.setOrgList(orgList);
+    }
+
     public componentDidMount(): void {
         window.addEventListener("resize", this.onWindowResized);
+        this.setOrgList();
     }
 
     public componentDidUpdate(prevProps: IProps, prevState: IState): void {

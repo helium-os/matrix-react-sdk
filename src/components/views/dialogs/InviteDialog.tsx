@@ -43,6 +43,7 @@ import { IInviteResult, inviteMultipleToRoom, showAnyInviteErrors } from "../../
 import { Action } from "../../../dispatcher/actions";
 import { DefaultTagID } from "../../../stores/room-list/models";
 import RoomListStore from "../../../stores/room-list/RoomListStore";
+import OrgStore from "../../../stores/OrgStore";
 import SettingsStore from "../../../settings/SettingsStore";
 import { UIFeature } from "../../../settings/UIFeature";
 import { mediaFromMxc } from "../../../customisations/Media";
@@ -75,9 +76,12 @@ import Modal from "../../../Modal";
 import dis from "../../../dispatcher/dispatcher";
 import { privateShouldBeEncrypted } from "../../../utils/rooms";
 import { NonEmptyArray } from "../../../@types/common";
+import {AddressType, getAddressType} from "../../../UserAddress";
 
 // we have a number of types defined from the Matrix spec which can't reasonably be altered here.
 /* eslint-disable camelcase */
+
+const orgStore = OrgStore.sharedInstance();
 
 interface Result {
     userId: string;
@@ -320,6 +324,13 @@ interface IInviteDialogState {
     errorText?: string;
 }
 
+interface SearchInfo {
+    userId?: string; // 用户id
+    userName?: string; // 用户名
+    userOrgId: string; // 用户所在组织id
+    userOrgAlias: string; // 用户所在组织别名
+}
+
 export default class InviteDialog extends React.PureComponent<Props, IInviteDialogState> {
     public static defaultProps: Partial<Props> = {
         kind: InviteKind.Dm,
@@ -478,10 +489,54 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         return !showAnyInviteErrors(result.states, room, result.inviter, userMap);
     }
 
-    private convertFilter(): Member[] {
-        // Check to see if there's anything to convert first
-        if (!this.state.filterText || !this.state.filterText.includes("@")) return this.state.targets || [];
+    // 获取当前用户所在组织id
+    private getOrgId(): string {
+        return orgStore.getCurrentOrgId();
+    }
 
+    // 生成搜索用户信息
+    private generateSearchUserInfo(searchUser: string): SearchInfo {
+        const currentOrgId = this.getOrgId(); // 当前用户所在组织id
+
+        let userId,
+            userName,
+            userOrgId,  // 查询用户所属的组织id
+            userOrgAlias; // 查询用户所属的组织别名
+        if (!searchUser.includes("@")) {
+            // 查询时不包含@，例如test_dyp，默认从当前服务查询
+            userName = searchUser;
+            userOrgId = currentOrgId;
+        } else if (getAddressType(searchUser) === AddressType.MatrixUserId) {
+            // @userId:chat.orgId
+            let chatServer;
+            [userId, chatServer] = searchUser.split('@')[1].split(':');
+            userOrgId = chatServer.split('.')[1];
+        } else {
+            // userName@orgAlias
+            [userName, userOrgAlias] = searchUser.split('@');
+        }
+
+        // 补齐信息
+        if (userOrgAlias && !userOrgId) {
+            userOrgId = orgStore.getOrgIdByAlias(userOrgAlias);
+        } else if (userOrgId && !userOrgAlias) {
+            userOrgAlias = orgStore.getOrgAliasById(userOrgId);
+        }
+
+        return {
+            userId,
+            userName,
+            userOrgId,
+            userOrgAlias
+        };
+    }
+
+    private convertFilter(): Member[] {
+        console.log('!!!!!enter convertFilter');
+        // Check to see if there's anything to convert first
+        if (!this.state.filterText || getAddressType(this.state.filterText) !== AddressType.MatrixUserId) return this.state.targets || [];
+
+        console.log('!!!!!this.canInviteMore()', this.canInviteMore());
         if (!this.canInviteMore()) {
             // There should only be one third-party invite → do not allow more targets
             return this.state.targets;
@@ -493,6 +548,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
             newMember = new DirectoryMember({ user_id: this.state.filterText });
         } else if (SettingsStore.getValue(UIFeature.IdentityServer)) {
             // Assume email
+            console.log('!!!!this.canInviteThirdParty()', this.canInviteThirdParty());
             if (this.canInviteThirdParty()) {
                 newMember = new ThreepidMember(this.state.filterText);
             }
@@ -512,6 +568,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         try {
             const cli = MatrixClientPeg.get();
             const targets = this.convertFilter();
+            console.log('!!!!!targets', targets);
             await startDmOnFirstMessage(cli, targets);
             this.props.onFinished(true);
         } catch (err) {
@@ -624,9 +681,11 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
 
     private updateSuggestions = async (term: string): Promise<void> => {
         const results = [];
-        const mxUserId = localStorage.getItem("mx_user_id");
-        const serverName = mxUserId.split(":").splice(1).join();
-        fetch(`/heliumos-user-api/api/v1/users?name=${encodeURIComponent(term)}`)
+        const currentOrgId = this.getOrgId();
+        const { userId, userName, userOrgId, userOrgAlias } = this.generateSearchUserInfo(term);
+        if (!!userId) { return; } // 如果有用户id，不走查询接口；只有搜索用户名走查询接口
+        const name = userName + (userOrgId !== currentOrgId ? `@${userOrgAlias}` : '');
+        fetch(`/heliumos-user-api/user/v1/users?name=${encodeURIComponent(name)}`)
             .then((response) => response.json())
             .then((res) => {
                 const data = res.data;
@@ -634,7 +693,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
                     for (let i = 0; i < data.length; i++) {
                         const item = data[i];
                         if (item.username) {
-                            const userId = `@${item.id}:${serverName}`;
+                            const userId = `@${item.id}:chat.${userOrgId}`;
                             results.splice(0, 0, {
                                 user_id: userId,
                                 display_name: item.display_name || item.username,
@@ -809,7 +868,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         }
         this.debounceTimer = window.setTimeout(() => {
             this.updateSuggestions(term);
-        }, 150); // 150ms debounce (human reaction time + some)
+        }, 500); // 500ms debounce (human reaction time + some)
     };
 
     private showMoreRecents = (): void => {
@@ -1277,7 +1336,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         const identityServersEnabled = SettingsStore.getValue(UIFeature.IdentityServer);
 
         const hasSelection =
-            this.state.targets.length > 0 || (this.state.filterText && this.state.filterText.includes("@"));
+            this.state.targets.length > 0 || getAddressType(this.state.filterText) === AddressType.MatrixUserId;
 
         const cli = MatrixClientPeg.get();
         const userId = cli.getUserId()!;
