@@ -328,7 +328,7 @@ interface SearchInfo {
     userId?: string; // 用户id
     userName?: string; // 用户名
     userOrgId: string; // 用户所在组织id
-    userOrgAlias: string; // 用户所在组织别名
+    userOrgName: string; // 用户所在组织名称
 }
 
 export default class InviteDialog extends React.PureComponent<Props, IInviteDialogState> {
@@ -501,7 +501,7 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
         let userId,
             userName,
             userOrgId,  // 查询用户所属的组织id
-            userOrgAlias; // 查询用户所属的组织别名
+            userOrgName; // 查询用户所属的组织名称
         if (!searchUser.includes("@")) {
             // 查询时不包含@，例如test_dyp，默认从当前服务查询
             userName = searchUser;
@@ -512,22 +512,28 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
             [userId, chatServer] = searchUser.split('@')[1].split(':');
             userOrgId = chatServer.split('.')[1];
         } else {
-            // userName@orgAlias
-            [userName, userOrgAlias] = searchUser.split('@');
+            // userName@orgName
+            [userName, userOrgName] = searchUser.split('@');
         }
 
         // 补齐信息
-        if (userOrgAlias && !userOrgId) {
-            userOrgId = orgStore.getOrgIdByAlias(userOrgAlias);
-        } else if (userOrgId && !userOrgAlias) {
-            userOrgAlias = orgStore.getOrgAliasById(userOrgId);
+        if (userOrgName && !userOrgId) {
+            userOrgId = orgStore.getOrgIdByName(userOrgName);
+        } else if (userOrgId && !userOrgName) {
+            userOrgName = orgStore.getOrgNameById(userOrgId);
         }
+        console.log('generateSearchUser  result', {
+            userId,
+            userName,
+            userOrgId,
+            userOrgName
+        });
 
         return {
             userId,
             userName,
             userOrgId,
-            userOrgAlias
+            userOrgName
         };
     }
 
@@ -682,9 +688,10 @@ export default class InviteDialog extends React.PureComponent<Props, IInviteDial
     private updateSuggestions = async (term: string): Promise<void> => {
         const results = [];
         const currentOrgId = this.getOrgId();
-        const { userId, userName, userOrgId, userOrgAlias } = this.generateSearchUserInfo(term);
+        const { userId, userName, userOrgId, userOrgName } = this.generateSearchUserInfo(term);
+        console.log('userOrgId', userOrgId, 'userOrgName', userOrgName);
         if (!!userId) { return; } // 如果有用户id，不走查询接口；只有搜索用户名走查询接口
-        const name = userName + (userOrgId !== currentOrgId ? `@${userOrgAlias}` : '');
+        const name = userName + (userOrgId !== currentOrgId ? `@${userOrgName}` : '');
         fetch(`/heliumos-user-api/user/v1/users?name=${encodeURIComponent(name)}`)
             .then((response) => response.json())
             .then((res) => {
