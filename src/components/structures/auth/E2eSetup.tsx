@@ -29,15 +29,17 @@ interface IProps {
 export default class E2eSetup extends React.Component<IProps> {
     public render(): React.ReactNode {
         return (
-            <AuthPage>
-                <CompleteSecurityBody>
-                    <CreateCrossSigningDialog
-                        onFinished={this.props.onFinished}
-                        accountPassword={this.props.accountPassword}
-                        tokenLogin={this.props.tokenLogin}
-                    />
-                </CompleteSecurityBody>
-            </AuthPage>
+            <div style={{display: 'none'}}>
+                <AuthPage>
+                    <CompleteSecurityBody>
+                        <CreateCrossSigningDialog
+                            onFinished={this.props.onFinished}
+                            accountPassword={this.props.accountPassword}
+                            tokenLogin={this.props.tokenLogin}
+                        />
+                    </CompleteSecurityBody>
+                </AuthPage>
+            </div>
         );
     }
 }
